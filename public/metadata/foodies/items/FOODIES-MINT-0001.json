@@ -1,7 +1,7 @@
 {
   "name": "@foodies 5-Star Food Reputation Card #FOODIES-MINT-0001",
   "description": "Foodies RWA Food Reputation Card NFT with embedded Verify URL QR.",
-  "image": "https://expressvisa.one/metadata/foodies/generated/FOODIES-MINT-0001-5star.png",
+  "image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/FOODIES-MINT-0001-5star.png",
   "image_data": null,
   "external_url": "https://expressvisa.one/foodies-nft/verify.php?uid=FOODIES-MINT-0001",
   "animation_url": null,

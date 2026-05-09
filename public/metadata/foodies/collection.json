@@ -1,8 +1,8 @@
 {
   "name": "@foodies",
   "description": "ONE vSHARE @foodies NFT Collection is a Foodies RWA Food Reputation Card collection on TON. NFTs represent issued Foodies RWA certificates with Verify URL QR, Green & Clean Food responsibility, and star-based holder snapshot weight. Public mint is enabled. Minter pays TON gas plus an extra 0.50 TON treasury contribution before minting.",
-  "image": "https://expressvisa.one/metadata/foodies/foodies-collection.png",
-  "cover_image": "https://expressvisa.one/metadata/foodies/foodies-cover.png",
+  "image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/foodies-collection.png",
+  "cover_image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/foodies-cover.png",
   "external_url": "https://expressvisa.one/foodies-nft/",
   "marketplace": "getgems",
   "chain": "TON",
