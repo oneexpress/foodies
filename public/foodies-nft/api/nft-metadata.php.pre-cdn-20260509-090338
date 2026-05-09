@@ -7,7 +7,7 @@ $stars = (int)($_GET['stars'] ?? $_GET['star'] ?? 1);
 if (!in_array($stars, [1,3,5], true)) $stars = 1;
 
 $safe = preg_replace('/[^A-Za-z0-9._-]/', '-', $uid);
-$image = "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/{$safe}-{$stars}star.png";
+$image = "https://expressvisa.one/metadata/foodies/generated/{$safe}-{$stars}star.png";
 $verify = "https://expressvisa.one/foodies-nft/verify.php?uid=" . rawurlencode($uid);
 $nameMap = [1=>'@foodies 1-Star Food Reputation Card',3=>'@foodies 3-Star Food Reputation Card',5=>'@foodies 5-Star Food Reputation Card'];
 

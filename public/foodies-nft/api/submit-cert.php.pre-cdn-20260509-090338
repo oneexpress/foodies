@@ -165,7 +165,7 @@ function foodies_auto_prepare_nft_artifact(string $certUid, int $star): array {
         'ok' => true,
         'verify_url' => $verifyUrl,
         'artifact_file' => '/metadata/foodies/generated/' . basename($artifactFile),
-        'artifact_url' => 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/' . basename($artifactFile),
+        'artifact_url' => 'https://expressvisa.one/metadata/foodies/generated/' . basename($artifactFile),
         'artifact_cdn' => $artifactCdn,
         'metadata_file' => '/metadata/foodies/items/' . basename($itemFile),
         'metadata_url' => $metadataCdn,

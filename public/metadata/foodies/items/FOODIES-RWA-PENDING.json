@@ -1,0 +1,16 @@
+{
+    "name": "@foodies RWA Food Reputation Card #FOODIES-RWA-PENDING",
+    "description": "Foodies RWA NFT",
+    "image": "https://raw.githubusercontent.com/oneexpress/foodies/main/public/metadata/foodies/generated/FOODIES-RWA-PENDING-1star.png",
+    "external_url": "https://expressvisa.one/foodies-nft/verify.php?uid=FOODIES-RWA-PENDING",
+    "attributes": [
+        {
+            "trait_type": "Stars",
+            "value": 1
+        },
+        {
+            "trait_type": "Responsibility",
+            "value": "Green & Clean Food"
+        }
+    ]
+}

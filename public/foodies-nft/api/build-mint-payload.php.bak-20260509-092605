@@ -1,0 +1,139 @@
+<?php
+declare(strict_types=1);
+
+header('Content-Type: application/json; charset=UTF-8');
+
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use Tonkeeper\TonConnect\TonConnect;
+use Brick\Math\BigInteger;
+use Tonkeeper\Core\Address;
+use Tonkeeper\Tlb\Types\Cell;
+use Tonkeeper\Tlb\Types\Builder;
+
+function out(array $a): void {
+    echo json_encode($a, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);
+    exit;
+}
+
+const COLLECTION = 'EQBHMH4g3xy-uOJpPN0XGcDhMifdKio_kYWk3uywaXz2aUrY';
+const OWNER      = 'UQCFC6_JIg7YcJDaybYZKNSgETbDb28q-6SArFXItaI5jsCb';
+
+$uid  = strtoupper(trim($_GET['uid']  ?? 'FOODIES-MINT-0001'));
+$star = (int)($_GET['star'] ?? 5);
+
+$metaBase = 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/items/';
+$imgBase  = 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/';
+
+$metaUrl = $metaBase . rawurlencode($uid) . '.json';
+
+$artifact = match ($star) {
+    1 => $imgBase . 'foodies-1star.png',
+    3 => $imgBase . 'foodies-3star.png',
+    default => $imgBase . 'foodies-5star.png',
+};
+
+$verifyUrl = 'https://expressvisa.one/foodies-nft/verify.php?uid=' . rawurlencode($uid);
+
+$metadata = [
+    'name' => '@foodies ' . $uid,
+    'description' => 'Foodies RWA Reputation NFT',
+    'image' => $artifact,
+    'external_url' => $verifyUrl,
+    'attributes' => [
+        ['trait_type'=>'Star Rating','value'=>(string)$star],
+        ['trait_type'=>'Green & Clean Food','value'=>'YES'],
+        ['trait_type'=>'Verify URL','value'=>$verifyUrl],
+        ['trait_type'=>'UID','value'=>$uid],
+    ]
+];
+
+$localMetaDir = '/var/www/html/visa/public/metadata/foodies/items';
+if (!is_dir($localMetaDir)) {
+    @mkdir($localMetaDir, 0775, true);
+}
+
+file_put_contents(
+    $localMetaDir . '/' . $uid . '.json',
+    json_encode($metadata, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT)
+);
+
+function snake(string $uri): Cell {
+    $b = new Builder();
+    $b->writeUint(0x00, 8);
+    $b->writeString($uri);
+    return $b->cell();
+}
+
+function buildMintBody(
+    int $index,
+    string $owner,
+    string $metaUrl
+): Cell {
+
+    $content = snake($metaUrl);
+
+    $b = new Builder();
+
+    /*
+      getgems/public mint compatible structure:
+      op::mint()
+      query_id
+      item_index
+      owner_address
+      content(ref)
+    */
+
+    $b->writeUint(1, 32); // op mint
+    $b->writeUint(time(), 64);
+    $b->writeUint($index, 64);
+    $b->writeAddress(Address::parse($owner));
+    $b->writeRef($content);
+
+    return $b->cell();
+}
+
+$indexFile = '/tmp/foodies-next-index.txt';
+
+if (!file_exists($indexFile)) {
+    file_put_contents($indexFile, '1');
+}
+
+$index = (int)trim(file_get_contents($indexFile));
+file_put_contents($indexFile, (string)($index + 1));
+
+$body = buildMintBody(
+    $index,
+    OWNER,
+    $metaUrl
+);
+
+$payloadB64 = base64_encode($body->toBoc(false));
+
+$amountTon = '0.55';
+$amountNano = (string)BigInteger::of((int)round(((float)$amountTon)*1_000_000_000));
+
+out([
+    'ok' => true,
+    'collection' => COLLECTION,
+    'owner' => OWNER,
+    'uid' => $uid,
+    'star' => $star,
+    'verify_url' => $verifyUrl,
+    'metadata_url' => $metaUrl,
+    'artifact_image' => $artifact,
+    'index' => $index,
+    'tonconnect' => [
+        'validUntil' => time() + 600,
+        'messages' => [[
+            'address' => COLLECTION,
+            'amount'  => $amountNano,
+            'payload' => $payloadB64
+        ]]
+    ],
+    'debug' => [
+        'payload_boc_magic' => substr(bin2hex(base64_decode($payloadB64)),0,8),
+        'payload_len' => strlen($payloadB64),
+        'metadata_local_file' => $localMetaDir . '/' . $uid . '.json'
+    ]
+]);

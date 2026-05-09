@@ -1,0 +1,126 @@
+<?php
+
+if (!function_exists('foodies_to_boc')) {
+    function foodies_to_boc($cell): string {
+
+        try {
+            if (method_exists($cell, 'toBoc')) {
+
+                try {
+                    return $cell->toBoc();
+                } catch (Throwable $e) {}
+
+                try {
+                    return $cell->toBoc(false);
+                } catch (Throwable $e) {}
+
+                try {
+                    return $cell->toBoc(false, false);
+                } catch (Throwable $e) {}
+            }
+
+            if (method_exists($cell, 'toBocString')) {
+
+                try {
+                    return $cell->toBocString();
+                } catch (Throwable $e) {}
+
+                try {
+                    return $cell->toBocString(false);
+                } catch (Throwable $e) {}
+            }
+
+            if (class_exists('\\Boc\\Serializer')) {
+                return \Boc\Serializer::toBoc($cell);
+            }
+
+        } catch (Throwable $e) {
+            throw new Exception(
+                'foodies_boc_failed: '.$e->getMessage()
+            );
+        }
+
+        throw new Exception('no_compatible_boc_serializer');
+    }
+}
+
+
+declare(strict_types=1);
+
+ini_set("display_errors","0");
+ini_set("log_errors","1");
+
+set_exception_handler(function(Throwable $e){
+    http_response_code(500);
+    header("Content-Type: application/json; charset=UTF-8");
+    echo json_encode([
+        "ok"=>false,
+        "error"=>->getMessage(),
+        "file"=>basename($e->getFile()),
+        "line"=>$e->getLine()
+    ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+    exit;
+});
+
+set_error_handler(function($severity,$message,$file,$line){
+    throw new ErrorException($message,0,$severity,$file,$line);
+});
+
+
+declare(strict_types=1);
+header("Content-Type: application/json; charset=UTF-8");
+
+function out(array $a, int $c=200): void {
+  http_response_code($c);
+  echo json_encode($a, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+  exit;
+}
+
+$uid = trim((string)($_GET['uid'] ?? $_POST['uid'] ?? ''));
+$&
+if (!preg_match("/^[UEk0][A-Za-z0-9_-]{40,}", $to)) {
+   foodies_fail("invalid_ton_address",["to"=>$to]);
+}
+
+$star = (int)($_GET['star'] ?? $_POST['star'] ?? 1);
+
+if ($uid === '') out(['ok'=>false,'error'=>'uid_required'],400);
+if ($to === '') out(['ok'=>false,'error'=>'recipient_required'],400);
+if (!in_array($star,[1,3,5],true)) out(['ok'=>false,'error'=>'invalid_star'],400);
+
+putenv('FOODIES_COLLECTION_ADDRESS=EQBP2ofSKqVWs_LlSpcpXKUOuqbHP6wpp2MljbbS8-dI-sbk');
+putenv('FOODIES_PUBLIC_MINT_ATTACH_TON=0.50');
+putenv('FOODIES_ITEM_METADATA_BASE=https://expressvisa.one/metadata/foodies/items');
+putenv('FOODIES_VERIFY_BASE=https://expressvisa.one/foodies-nft/verify.php?uid=');
+
+$cmd = 'cd /var/www/html/visa/foodies-blueprint && HUSKY=0 CI=1 npx ts-node scripts/buildFoodiesMintPayload.ts'
+  . ' --uid=' . escapeshellarg($uid)
+  . ' --to=' . escapeshellarg($to)
+  . ' --star=' . escapeshellarg((string)$star)
+  . ' 2>&1';
+
+$raw = shell_exec($cmd);
+$j = json_decode((string)$raw, true);
+if (!is_array($j)) out(['ok'=>false,'error'=>'invalid_builder_json','raw'=>$raw],500);
+out($j, !empty($j['ok']) ? 200 : 500);
+
+
+if (!function_exists("foodies_fail")) {
+  function foodies_fail(string $msg, array $extra=[]): void {
+    http_response_code(500);
+    echo json_encode(array_merge([
+      "ok"=>false,
+      "error"=>$msg
+    ], $extra), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+}
+
+set_exception_handler(function(Throwable $e){
+  foodies_fail($e->getMessage(),[
+    "file"=>basename($e->getFile()),
+    "line"=>$e->getLine()
+  ]);
+});
+
+

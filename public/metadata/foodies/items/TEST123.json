@@ -1,0 +1,28 @@
+{
+    "name": "@foodies RWA Food Reputation Card #TEST123",
+    "description": "Foodies RWA Food Reputation NFT with Verify QR, Green & Clean Food responsibility, and star-based reputation.",
+    "image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/TEST123-5star.png",
+    "external_url": "https://expressvisa.one/foodies-nft/verify.php?uid=TEST123",
+    "attributes": [
+        {
+            "trait_type": "Star Rating",
+            "value": "5"
+        },
+        {
+            "trait_type": "Green & Clean Food",
+            "value": "YES"
+        },
+        {
+            "trait_type": "Verify URL",
+            "value": "https://expressvisa.one/foodies-nft/verify.php?uid=TEST123"
+        },
+        {
+            "trait_type": "UID",
+            "value": "TEST123"
+        },
+        {
+            "trait_type": "Chain",
+            "value": "TON"
+        }
+    ]
+}

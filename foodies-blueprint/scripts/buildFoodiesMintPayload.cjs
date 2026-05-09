@@ -23,7 +23,7 @@ const rawBase = (
   arg('rawBase','https://raw.githubusercontent.com/oneexpress/foodies/main/public/metadata/foodies')
 ).replace(/\/+$/,'');
 
-const collection = 'EQBP2ofSKqVWs_LlSactlylcpeuuxz-sKXYyWNttLz50j6IN';
+const collection = 'UQBP2ofSKqVWs_LlSactlylcpeuuxz-sKXYyWNttLz50j6Dh';
 
 const metadataUrl = `${rawBase}/items/${uid}.json`;
 

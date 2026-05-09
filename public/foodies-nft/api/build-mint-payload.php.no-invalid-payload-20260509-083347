@@ -1,0 +1,73 @@
+<?php
+declare(strict_types=1);
+
+ini_set('display_errors','0');
+ini_set('log_errors','1');
+header('Content-Type: application/json; charset=UTF-8');
+
+function out(array $a, int $code=200): void {
+    http_response_code($code);
+    echo json_encode($a, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+try {
+    $uid  = preg_replace('/[^A-Za-z0-9._-]/', '-', trim((string)($_GET['uid'] ?? 'FOODIES-MINT-0001')));
+    $star = (int)($_GET['star'] ?? $_GET['stars'] ?? 5);
+    if (!in_array($star, [1,3,5], true)) $star = 5;
+
+    $to = trim((string)($_GET['to'] ?? ''));
+    if ($to === '') {
+        $to = 'UQCFC6_JIg7YcJDaybYZKNSgETbDb28q-6SArFXItaI5jsCb';
+    }
+
+    if (!preg_match('/^[UE][A-Za-z0-9_-]{40,}$/', $to)) {
+        out(['ok'=>false,'error'=>'invalid_recipient_ton_address','to'=>$to], 400);
+    }
+
+    $collection = getenv('FOODIES_COLLECTION_ADDRESS') ?: getenv('FOODIES_NFT_COLLECTION') ?: '';
+    $treasury   = getenv('FOODIES_TREASURY_ADDRESS') ?: 'UQBdYfGArtoCUmBs5TjYQtfPFfQuGC2Ydbj2pQr3zIlNrDta';
+
+    $cdn = 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public';
+    $metadataUrl = $cdn . '/metadata/foodies/items/' . rawurlencode($uid) . '.json';
+    $verifyUrl = 'https://expressvisa.one/foodies-nft/verify.php?uid=' . rawurlencode($uid);
+
+    /*
+      Safe TonConnect test payload:
+      - 0.50 TON treasury contribution / mint test transfer
+      - no broken PHP Cell / BOC serializer
+      - wallet can sign
+      - collection mint can be wired after confirmed collection opcode script is stable
+    */
+    $amountNano = '500000000';
+
+    $tx = [
+        'validUntil' => time() + 600,
+        'messages' => [[
+            'address' => $treasury,
+            'amount'  => $amountNano,
+            'payload' => base64_encode("FOODIES NFT MINT TEST\nUID={$uid}\nSTAR={$star}\nTO={$to}\nMETA={$metadataUrl}\nVERIFY={$verifyUrl}")
+        ]]
+    ];
+
+    out([
+        'ok' => true,
+        'mode' => 'safe_tonconnect_transfer_payload',
+        'uid' => $uid,
+        'star' => $star,
+        'recipient' => $to,
+        'collection' => $collection,
+        'treasury' => $treasury,
+        'metadata_url' => $metadataUrl,
+        'verify_url' => $verifyUrl,
+        'tonconnect' => $tx,
+        'payload' => $tx
+    ]);
+} catch (Throwable $e) {
+    out([
+        'ok'=>false,
+        'error'=>$e->getMessage(),
+        'file'=>basename($e->getFile()),
+        'line'=>$e->getLine()
+    ], 500);
+}

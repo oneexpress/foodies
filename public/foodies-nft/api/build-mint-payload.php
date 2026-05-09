@@ -19,7 +19,7 @@ $uid=substr($uid,0,80);
 $stars=preg_replace('/[^0-9]/','',(string)($_GET['stars']??'1'));
 $stars=in_array($stars,['1','3','5'],true)?$stars:'1';
 
-$collection='EQBP2ofSKqVWs_LlSactlylcpeuuxz-sKXYyWNttLz50j6IN';
+$collection='UQBP2ofSKqVWs_LlSactlylcpeuuxz-sKXYyWNttLz50j6Dh';
 
 $rawBase='https://raw.githubusercontent.com/oneexpress/foodies/main/public/metadata/foodies';
 
