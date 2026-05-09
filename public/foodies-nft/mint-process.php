@@ -51,8 +51,8 @@ body{margin:0;background:radial-gradient(circle at top,#fff 0,#fff3f4 30%,var(--
 .led.on{background:#22c55e;box-shadow:0 0 0 5px rgba(34,197,94,.16),0 0 18px rgba(34,197,94,.95)}
 .pillbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .pill{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);border-radius:999px;padding:8px 11px;font-size:12px;font-weight:900}
-.grid{display:grid;grid-template-columns:450px 1fr;gap:16px;margin-top:16px}
-.card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.07)}
+.grid{display:grid;grid-template-columns:minmax(0,450px) minmax(0,1fr);gap:16px;margin-top:16px;max-width:100%;overflow:hidden}
+.card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.07);min-width:0;max-width:100%}
 .card h2{margin:0 0 12px;font-size:20px}
 .preview{background:#111;border-radius:22px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:540px;position:relative}
 .preview img{max-width:100%;height:auto;display:block}
@@ -72,7 +72,7 @@ body{margin:0;background:radial-gradient(circle at top,#fff 0,#fff3f4 30%,var(--
 .btn{border:0;border-radius:16px;background:var(--red);color:#fff;font-weight:1000;padding:14px 12px;text-decoration:none;text-align:center;cursor:pointer}
 .btn.dark{background:#111}.btn.green{background:var(--green)}.btn.gold{background:var(--gold)}.btn.blue{background:var(--blue)}
 .btn:disabled{opacity:.55;cursor:not-allowed}
-pre{white-space:pre-wrap;background:#101828;color:#e5e7eb;border-radius:18px;padding:14px;font-size:11px;max-height:330px;overflow:auto}
+pre{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;background:#101828;color:#e5e7eb;border-radius:18px;padding:14px;font-size:11px;max-height:330px;overflow:auto;max-width:100%;width:100%}
 .small{font-size:12px;color:var(--muted);line-height:1.55}
 #tonConnectMount{min-height:36px;margin-bottom:10px}
 @media(max-width:930px){.grid{grid-template-columns:1fr}.preview{min-height:auto}.actions{grid-template-columns:1fr}.heroGrid{grid-template-columns:1fr}.hero h1{font-size:24px}}
