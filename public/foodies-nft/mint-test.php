@@ -30,7 +30,7 @@ function stripInvalidPayload(tx){
   if(tx && Array.isArray(tx.messages)){
     tx.messages = tx.messages.map(m => {
       const x = {...m};
-      delete x.payload;
+      // payload preserved for real NFT mint
       return x;
     });
   }
@@ -256,7 +256,7 @@ function stripInvalidPayload(tx){
   if(tx && Array.isArray(tx.messages)){
     tx.messages = tx.messages.map(m => {
       const x = {...m};
-      delete x.payload;
+      // payload preserved for real NFT mint
       return x;
     });
   }

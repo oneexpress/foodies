@@ -1,37 +1,28 @@
 {
-  "name": "@foodies 5-Star Food Reputation Card #FOODIES-MINT-0001",
-  "description": "Foodies RWA Food Reputation Card NFT with embedded Verify URL QR.",
-  "image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/FOODIES-MINT-0001-5star.png",
-  "image_data": null,
-  "external_url": "https://expressvisa.one/foodies-nft/verify.php?uid=FOODIES-MINT-0001",
-  "animation_url": null,
-  "marketplace": "getgems",
-  "seller_fee_basis_points": 2500,
-  "fee_recipient": "UQBdYfGArtoCUmBs5TjYQtfPFfQuGC2Ydbj2pQr3zIlNrDta",
-  "attributes": [
-    {
-      "trait_type": "Star Rating",
-      "value": "5"
-    },
-    {
-      "trait_type": "Card Type",
-      "value": "MASTER CHEF CARD"
-    },
-    {
-      "trait_type": "Green & Clean Food",
-      "value": "Yes"
-    },
-    {
-      "trait_type": "RWA Unit",
-      "value": "Food Reputation Responsibility"
-    },
-    {
-      "trait_type": "Cert UID",
-      "value": "FOODIES-MINT-0001"
-    },
-    {
-      "trait_type": "Verify QR",
-      "value": "Embedded"
-    }
-  ]
+    "name": "@foodies RWA Food Reputation Card #FOODIES-MINT-0001",
+    "description": "Foodies RWA Food Reputation NFT with Verify QR, Green & Clean Food responsibility, and star-based reputation.",
+    "image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/FOODIES-MINT-0001-5star.png",
+    "external_url": "https://expressvisa.one/foodies-nft/verify.php?uid=FOODIES-MINT-0001",
+    "attributes": [
+        {
+            "trait_type": "Star Rating",
+            "value": "5"
+        },
+        {
+            "trait_type": "Green & Clean Food",
+            "value": "YES"
+        },
+        {
+            "trait_type": "Verify URL",
+            "value": "https://expressvisa.one/foodies-nft/verify.php?uid=FOODIES-MINT-0001"
+        },
+        {
+            "trait_type": "UID",
+            "value": "FOODIES-MINT-0001"
+        },
+        {
+            "trait_type": "Chain",
+            "value": "TON"
+        }
+    ]
 }

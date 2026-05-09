@@ -1,0 +1,28 @@
+{
+    "name": "@foodies 1-Star Food Reputation Card #FOODIES-MINT-0002",
+    "description": "Foodies RWA Food Reputation Card NFT. Verify URL QR is merged into the final NFT PNG artifact.",
+    "image": "https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/generated/FOODIES-MINT-0002-1star.png",
+    "external_url": "https://expressvisa.one/foodies-nft/verify.php?uid=FOODIES-MINT-0002",
+    "attributes": [
+        {
+            "trait_type": "Star Rating",
+            "value": "1"
+        },
+        {
+            "trait_type": "Verify QR",
+            "value": "Merged into final PNG artifact"
+        },
+        {
+            "trait_type": "Green & Clean Food",
+            "value": "Yes"
+        },
+        {
+            "trait_type": "RWA Unit",
+            "value": "Food Reputation Responsibility"
+        },
+        {
+            "trait_type": "Cert UID",
+            "value": "FOODIES-MINT-0002"
+        }
+    ]
+}
