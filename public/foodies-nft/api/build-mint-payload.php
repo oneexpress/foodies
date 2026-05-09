@@ -1,95 +1,75 @@
 <?php
 declare(strict_types=1);
 
-function foodies_cdn_item_json_url(string $uid): string {
-    $uid = preg_replace('/[^A-Za-z0-9_-]/', '', $uid);
-    return 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/items/' . $uid . '.json';
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+
+function out(array $a,int $c=200):void{
+ http_response_code($c);
+ echo json_encode($a,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+ exit;
 }
 
-header('Content-Type: application/json; charset=UTF-8');
+$root='/var/www/html/visa';
 
-function out(array $a, int $code=200): void {
-  http_response_code($code);
-  echo json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-  exit;
-}
+$uid=preg_replace('/[^A-Z0-9_-]/','',(string)($_GET['uid']??'FOODIES-RWA-PENDING'));
+$uid=$uid?:'FOODIES-RWA-PENDING';
+$uid=substr($uid,0,80);
 
-$uid = strtoupper(trim((string)($_GET['uid'] ?? 'FOODIES-MINT-0001')));
-$uid = preg_replace('/[^A-Za-z0-9._-]/', '-', $uid);
-$star = (int)($_GET['star'] ?? $_GET['stars'] ?? 5);
-if (!in_array($star, [1,3,5], true)) $star = 5;
+$stars=preg_replace('/[^0-9]/','',(string)($_GET['stars']??'1'));
+$stars=in_array($stars,['1','3','5'],true)?$stars:'1';
 
-$collection = '0:4fda87d22aa556b3f2e54a97295ca50ebaa6c73fac29a763258db6d2f3e748fa';
-$owner = 'UQCFC6_JIg7YcJDaybYZKNSgETbDb28q-6SArFXItaI5jsCb';
-$cdn = 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public';
+$collection='EQBP2ofSKqVWs_LlSactlylcpeuuxz-sKXYyWNttLz50j6IN';
 
-$itemDir = '/var/www/html/visa/public/metadata/foodies/items';
-$genDir = '/var/www/html/visa/public/metadata/foodies/generated';
-@mkdir($itemDir, 0775, true);
-@mkdir($genDir, 0775, true);
+$rawBase='https://raw.githubusercontent.com/oneexpress/foodies/main/public/metadata/foodies';
 
-$artifact = $cdn . '/metadata/foodies/generated/' . $uid . '-' . $star . 'star.png';
-$fallback = $cdn . '/metadata/foodies/foodies-' . $star . 'star.png';
-$verify = 'https://expressvisa.one/foodies-nft/verify.php?uid=' . rawurlencode($uid);
-$metaUrl = $cdn . '/metadata/foodies/items/' . rawurlencode($uid) . '.json';
+$verify='https://expressvisa.one/foodies-nft/verify.php?uid='.rawurlencode($uid);
 
-$meta = [
-  'name' => '@foodies RWA Food Reputation Card #' . $uid,
-  'description' => 'Foodies RWA Food Reputation NFT with Verify QR, Green & Clean Food responsibility, and star-based reputation.',
-  'image' => $artifact,
-  'external_url' => $verify,
-  'attributes' => [
-    ['trait_type'=>'Star Rating','value'=>(string)$star],
-    ['trait_type'=>'Green & Clean Food','value'=>'YES'],
-    ['trait_type'=>'Verify URL','value'=>$verify],
-    ['trait_type'=>'UID','value'=>$uid],
-    ['trait_type'=>'Chain','value'=>'TON']
+$image="$rawBase/generated/$uid-{$stars}star.png";
+
+$meta="$rawBase/items/$uid.json";
+
+@mkdir("$root/public/metadata/foodies/items",0775,true);
+@mkdir("$root/public/metadata/foodies/generated",0775,true);
+
+file_put_contents(
+ "$root/public/metadata/foodies/items/$uid.json",
+ json_encode([
+  'name'=>"@foodies RWA Food Reputation Card #$uid",
+  'description'=>'Foodies RWA NFT',
+  'image'=>$image,
+  'external_url'=>$verify,
+  'attributes'=>[
+   ['trait_type'=>'Stars','value'=>(int)$stars],
+   ['trait_type'=>'Responsibility','value'=>'Green & Clean Food']
   ]
-];
+ ],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE)
+);
 
-file_put_contents($itemDir . '/' . $uid . '.json', json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n");
+$cmd='node '
+ .escapeshellarg($root.'/foodies-blueprint/scripts/buildFoodiesMintPayload.cjs')
+ .' uid='.escapeshellarg($uid)
+ .' stars='.escapeshellarg($stars)
+ .' rawBase='.escapeshellarg($rawBase)
+ .' 2>&1';
 
-$indexFile = '/var/www/html/visa/foodies-blueprint/.foodies-next-index';
-if (!is_file($indexFile)) file_put_contents($indexFile, '1');
-$index = max(1, (int)trim((string)file_get_contents($indexFile)));
-file_put_contents($indexFile, (string)($index + 1));
+$raw=shell_exec($cmd);
 
-$cmd = 'node ' . escapeshellarg('/var/www/html/visa/foodies-blueprint/scripts/buildFoodiesMintPayload.cjs')
-  . ' --uid=' . escapeshellarg($uid)
-  . ' --star=' . escapeshellarg((string)$star)
-  . ' --index=' . escapeshellarg((string)$index)
-  . ' --collection=' . escapeshellarg($collection)
-  . ' --owner=' . escapeshellarg($owner)
-  . ' --cdn=' . escapeshellarg($cdn);
+$j=json_decode((string)$raw,true);
 
-$raw = shell_exec($cmd . ' 2>&1');
-$built = json_decode((string)$raw, true);
-
-if (!is_array($built) || empty($built['payload'])) {
-  out(['ok'=>false, 'error'=>'payload_builder_failed', 'raw'=>$raw], 500);
+if(!$j || empty($j['ok'])){
+ out([
+  'ok'=>false,
+  'error'=>'payload_build_failed',
+  'raw'=>$raw
+ ],500);
 }
 
-out([
-  'ok' => true,
-  'uid' => $uid,
-  'star' => $star,
-  'collection' => $collection,
-  'owner' => $owner,
-  'index' => $index,
-  'metadata_url' => $metaUrl,
-  'artifact_image' => $artifact,
-  'verify_url' => $verify,
-  'tonconnect' => [
-    'validUntil' => time() + 600,
-    'messages' => [[
-      'address' => $collection,
-      'amount' => '550000000',
-      'payload' => $built['payload']
-    ]]
-  ],
-  'debug' => [
-    'payload_magic' => $built['payload_magic'] ?? '',
-    'payload_len' => strlen((string)$built['payload']),
-    'local_metadata' => $itemDir . '/' . $uid . '.json'
-  ]
-]);
+if(str_starts_with((string)$j['messages'][0]['address'],'0:')){
+ out([
+  'ok'=>false,
+  'error'=>'raw_address_detected'
+ ],500);
+}
+
+out($j);
