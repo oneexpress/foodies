@@ -1,3 +1,4 @@
+const FOODIES_CDN_BASE = 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies';
 const { beginCell, Address, toNano } = require('@ton/core');
 
 function arg(name, fallback='') {

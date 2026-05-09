@@ -1,5 +1,11 @@
 <?php
 declare(strict_types=1);
+
+function foodies_cdn_item_json_url(string $uid): string {
+    $uid = preg_replace('/[^A-Za-z0-9_-]/', '', $uid);
+    return 'https://cdn.jsdelivr.net/gh/oneexpress/foodies@main/public/metadata/foodies/items/' . $uid . '.json';
+}
+
 header('Content-Type: application/json; charset=UTF-8');
 
 function out(array $a, int $code=200): void {
