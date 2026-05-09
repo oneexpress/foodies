@@ -1,0 +1,81 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store');
+
+function out(array $a): void {
+  echo json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+  exit;
+}
+
+$wallet = trim((string)($_GET['wallet'] ?? $_POST['wallet'] ?? ''));
+if ($wallet === '') out(['ok'=>false,'error'=>'wallet_required']);
+
+$pdo = new PDO('mysql:host=localhost;dbname=visa_db;charset=utf8mb4', 'root', '', [
+  PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+  PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+]);
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS ev_reward_profiles (
+  wallet VARCHAR(128) PRIMARY KEY,
+  total_score DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  total_vshare DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  vusdt_offchain DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  daily_vshare DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  daily_date DATE NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS ev_wallet_balances (
+  wallet VARCHAR(128) NOT NULL,
+  token VARCHAR(32) NOT NULL,
+  balance DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY(wallet, token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$pdo->prepare("INSERT IGNORE INTO ev_reward_profiles(wallet) VALUES(?)")->execute([$wallet]);
+
+$bal = ['vUSDT'=>0.0,'vSHARE'=>0.0,'SCORE'=>0.0];
+$last = null;
+
+$q = $pdo->prepare("SELECT token,balance,updated_at FROM ev_wallet_balances WHERE wallet=?");
+$q->execute([$wallet]);
+foreach ($q->fetchAll() as $r) {
+  $t = strtoupper((string)$r['token']);
+  if ($t === 'VUSDT') $bal['vUSDT'] = (float)$r['balance'];
+  if ($t === 'VSHARE') $bal['vSHARE'] = (float)$r['balance'];
+  if ($t === 'SCORE') $bal['SCORE'] = (float)$r['balance'];
+  $last = max($last ?? $r['updated_at'], $r['updated_at']);
+}
+
+$p = $pdo->prepare("SELECT total_score,total_vshare,vusdt_offchain,daily_vshare,daily_date,updated_at FROM ev_reward_profiles WHERE wallet=?");
+$p->execute([$wallet]);
+$profile = $p->fetch() ?: [];
+
+$bal['vUSDT'] = max($bal['vUSDT'], (float)($profile['vusdt_offchain'] ?? 0));
+$bal['vSHARE'] = max($bal['vSHARE'], (float)($profile['total_vshare'] ?? 0));
+$bal['SCORE'] = max($bal['SCORE'], (float)($profile['total_score'] ?? 0));
+
+foreach ([['vUSDT',$bal['vUSDT']],['vSHARE',$bal['vSHARE']],['SCORE',$bal['SCORE']]] as $x) {
+  $s = $pdo->prepare("INSERT INTO ev_wallet_balances(wallet,token,balance) VALUES(?,?,?)
+    ON DUPLICATE KEY UPDATE balance=VALUES(balance), updated_at=CURRENT_TIMESTAMP");
+  $s->execute([$wallet,$x[0],$x[1]]);
+}
+
+out([
+  'ok'=>true,
+  'wallet'=>$wallet,
+  'connected'=>true,
+  'offchain'=>[
+    'vusdt'=>$bal['vUSDT'],
+    'vshare'=>$bal['vSHARE'],
+    'score'=>$bal['SCORE'],
+  ],
+  'daily_vshare'=>(float)($profile['daily_vshare'] ?? 0),
+  'daily_cap'=>10,
+  'last_sync'=>$last ?: date('c'),
+]);
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

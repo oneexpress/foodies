@@ -1,0 +1,48 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=UTF-8');
+
+echo json_encode([
+  'ok' => true,
+  'tokens' => [
+    [
+      'symbol' => 'vUSDT',
+      'name' => 'ONE vUSDT',
+      'type' => 'jetton',
+      'decimals' => 9,
+      'metadata' => 'https://expressvisa.one/metadata/vusdt.json',
+      'logo' => 'https://expressvisa.one/metadata/991_vusdt_logo.png',
+      'master' => getenv('VUSDT_JETTON_MASTER') ?: ''
+    ],
+    [
+      'symbol' => 'vSHARE',
+      'name' => 'ONE vSHARE',
+      'type' => 'jetton',
+      'decimals' => 9,
+      'metadata' => 'https://expressvisa.one/metadata/vshare.json',
+      'logo' => 'https://expressvisa.one/metadata/991_vshare_logo.png',
+      'master' => getenv('VSHARE_JETTON_MASTER') ?: ''
+    ],
+    [
+      'symbol' => 'USDT-TON',
+      'name' => 'USDT on TON',
+      'type' => 'jetton',
+      'decimals' => 6,
+      'metadata' => '',
+      'logo' => 'https://expressvisa.one/metadata/usdt_ton.png',
+      'master' => getenv('USDT_TON_MASTER') ?: ''
+    ],
+    [
+      'symbol' => 'TON',
+      'name' => 'Native TON',
+      'type' => 'native',
+      'decimals' => 9,
+      'metadata' => '',
+      'logo' => 'https://expressvisa.one/metadata/ton.png',
+      'master' => ''
+    ]
+  ]
+], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

@@ -1,0 +1,42 @@
+<?php
+declare(strict_types=1);
+
+function ev991_load_env(): array {
+    static $env = null;
+    if (is_array($env)) return $env;
+    $env = [];
+    $file = '/var/www/secure/.env';
+    if (is_file($file)) {
+        foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) continue;
+            [$k,$v] = explode('=', $line, 2);
+            $k = trim($k); $v = trim($v);
+            if (strlen($v) >= 2) {
+                $a=$v[0]; $b=substr($v,-1);
+                if (($a === '"' && $b === '"') || ($a === "'" && $b === "'")) $v = substr($v,1,-1);
+            }
+            $env[$k]=$v; $_ENV[$k]=$v; putenv($k.'='.$v);
+        }
+    }
+    return $env;
+}
+function ev991_env(string $key, string $default=''): string {
+    $env = ev991_load_env();
+    $v = $env[$key] ?? getenv($key);
+    return ($v === false || $v === null || $v === '') ? $default : (string)$v;
+}
+function ev991_pdo(): PDO {
+    $pass = ev991_env('DB_PASSWORD', '');
+    if ($pass === '') throw new RuntimeException('DB_PASSWORD is empty');
+    return new PDO(
+        'mysql:host='.ev991_env('DB_HOST','localhost').';port='.ev991_env('DB_PORT','3306').';dbname='.ev991_env('DB_DATABASE','visa_marketplace_db').';charset=utf8mb4',
+        ev991_env('DB_USERNAME','oneexpressvisa'),
+        $pass,
+        [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]
+    );
+}
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

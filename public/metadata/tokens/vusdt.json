@@ -1,0 +1,7 @@
+{
+  "name": "ExpressVisa vUSDT",
+  "symbol": "vUSDT",
+  "description": "1:1 settlement mirror of USDT-TON for eligible ExpressVisa settlement activity.",
+  "decimals": "6",
+  "image": "https://expressvisa.one/metadata/991_visa_logo_only.png"
+}

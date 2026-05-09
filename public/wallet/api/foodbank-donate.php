@@ -1,0 +1,99 @@
+<?php
+declare(strict_types=1);
+
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+
+function env_load(): void {
+    static $loaded = false;
+    if ($loaded) return;
+    $loaded = true;
+    $file = '/var/www/secure/.env';
+    if (!is_file($file)) return;
+    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+        [$k,$v] = explode('=', $line, 2);
+        $_ENV[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+    }
+}
+function envv(string $k, string $d=''): string {
+    env_load();
+    return trim((string)($_ENV[$k] ?? getenv($k) ?: $d));
+}
+function pdo_db(): PDO {
+    $host = envv('DB_HOST', '127.0.0.1');
+    $db   = envv('VISA_DB_NAME', envv('DB_DATABASE', 'visa_db'));
+    $user = envv('DB_USERNAME', envv('DB_USER', 'oneexpressvisa'));
+    $pass = envv('DB_PASSWORD', envv('DB_PASS', ''));
+    return new PDO("mysql:host={$host};dbname={$db};charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+}
+function wallet_id(): string {
+    return trim((string)($_COOKIE['ev_ton_wallet'] ?? $_COOKIE['ev_wallet_user'] ?? 'guest'));
+}
+function out(array $d, int $c=200): never {
+    http_response_code($c);
+    echo json_encode($d, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(['ok'=>false,'error'=>'POST_REQUIRED'],405);
+
+$raw = file_get_contents('php://input');
+$body = json_decode(is_string($raw) ? $raw : '', true);
+if (!is_array($body)) $body = [];
+
+$amount = (float)($body['amount_vusdt'] ?? 0);
+$memo = trim((string)($body['memo'] ?? 'FoodBank Donation'));
+
+if ($amount <= 0) out(['ok'=>false,'error'=>'INVALID_AMOUNT'],400);
+
+$wallet = wallet_id();
+$pdo = pdo_db();
+
+$pdo->beginTransaction();
+
+$pdo->prepare("INSERT IGNORE INTO ev_wallet_ledger(wallet, token, amount, direction, ref_type, ref_id, status, memo) VALUES(?, 'vUSDT', 0, 'adjust', 'foodbank_precheck', '', 'confirmed', 'ensure wallet row')")
+    ->execute([$wallet]);
+
+$balStmt = $pdo->prepare("
+  SELECT COALESCE(SUM(
+    CASE
+      WHEN direction IN ('reload','adjust','credit') THEN amount
+      WHEN direction IN ('debit','donation') THEN -amount
+      ELSE 0
+    END
+  ),0) FROM ev_wallet_ledger
+  WHERE wallet=? AND token='vUSDT' AND status='confirmed'
+");
+$balStmt->execute([$wallet]);
+$balance = (float)$balStmt->fetchColumn();
+
+if ($balance < $amount) {
+    $pdo->rollBack();
+    out(['ok'=>false,'error'=>'INSUFFICIENT_VUSDT','balance'=>number_format($balance,6,'.','')],400);
+}
+
+$uid = 'FDB-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(4)));
+
+$pdo->prepare("INSERT INTO ev_foodbank_donations(donation_uid,wallet,amount_vusdt,status,memo) VALUES(?,?,?,?,?)")
+    ->execute([$uid,$wallet,number_format($amount,6,'.',''),'confirmed',$memo]);
+
+$pdo->prepare("INSERT INTO ev_wallet_ledger(wallet, token, amount, direction, ref_type, ref_id, status, memo) VALUES(?, 'vUSDT', ?, 'debit', 'foodbank_donation', ?, 'confirmed', ?)")
+    ->execute([$wallet,number_format($amount,6,'.',''),$uid,$memo]);
+
+$pdo->commit();
+
+out([
+    'ok'=>true,
+    'donation_uid'=>$uid,
+    'amount_vusdt'=>number_format($amount,6,'.',''),
+    'message'=>'FOODBANK_DONATION_CONFIRMED'
+]);
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

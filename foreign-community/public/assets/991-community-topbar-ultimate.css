@@ -1,0 +1,199 @@
+/* 991 COMMUNITY TOPBAR ULTIMATE — single source */
+html body .App-header,
+html body .Header{
+  background:#ffffff!important;
+  min-height:96px!important;
+  height:auto!important;
+  border-top:4px solid #e60012!important;
+  border-bottom:1px solid rgba(230,0,18,.18)!important;
+  box-shadow:0 8px 26px rgba(15,23,42,.06)!important;
+  overflow:visible!important;
+  position:relative!important;
+  z-index:30!important;
+}
+
+html body .App-header .container,
+html body .Header .container{
+  width:100%!important;
+  max-width:1180px!important;
+  min-height:92px!important;
+  margin:0 auto!important;
+  padding:12px 18px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:18px!important;
+  flex-wrap:nowrap!important;
+  overflow:visible!important;
+}
+
+html body .Header-title{
+  flex:0 0 auto!important;
+  float:none!important;
+  margin:0 auto 0 0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+}
+
+html body .Header-logo{
+  max-height:64px!important;
+  width:auto!important;
+  display:block!important;
+  object-fit:contain!important;
+}
+
+html body .Header-primary{
+  flex:0 0 auto!important;
+  float:none!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:12px!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+html body .Header-secondary{
+  flex:0 0 auto!important;
+  float:none!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:14px!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+html body .Header-controls{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:14px!important;
+  margin:0!important;
+  padding:0!important;
+  list-style:none!important;
+}
+
+html body .Header-controls > li,
+html body .Header-primary > li,
+html body .Header-secondary > li{
+  display:flex!important;
+  align-items:center!important;
+  margin:0!important;
+  padding:0!important;
+  list-style:none!important;
+}
+
+html body .Search{
+  width:360px!important;
+  max-width:360px!important;
+  flex:0 0 360px!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  position:relative!important;
+  order:20!important;
+}
+
+html body .Search-input{
+  width:100%!important;
+  height:46px!important;
+  border:0!important;
+  border-radius:18px!important;
+  background:#f1f5f9!important;
+  box-shadow:inset 0 0 0 1px rgba(148,163,184,.12)!important;
+  overflow:hidden!important;
+}
+
+html body .Search-input input{
+  width:100%!important;
+  height:46px!important;
+  line-height:46px!important;
+  border:0!important;
+  background:#f1f5f9!important;
+  color:#334155!important;
+  padding:0 46px!important;
+  font-size:15px!important;
+  font-weight:700!important;
+  outline:none!important;
+  box-shadow:none!important;
+}
+
+html body .Search-input input:focus{
+  background:#fff!important;
+  outline:2px solid rgba(230,0,18,.18)!important;
+}
+
+html body .Search-input input::placeholder{
+  color:#64748b!important;
+  font-weight:600!important;
+}
+
+html body .Header a,
+html body .Header button,
+html body .Header .Button{
+  height:40px!important;
+  min-height:40px!important;
+  border-radius:999px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  white-space:nowrap!important;
+  font-weight:800!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+
+html body .Header .item-signUp .Button,
+html body .Header .Button--primary{
+  background:#e60012!important;
+  border:1px solid #e60012!important;
+  color:#fff!important;
+  padding:0 16px!important;
+}
+
+html body .Header .item-logIn .Button,
+html body .Header .Button--link{
+  background:#fff!important;
+  border:1px solid rgba(230,0,18,.42)!important;
+  color:#e60012!important;
+  padding:0 16px!important;
+}
+
+@media(max-width:900px){
+  html body .App-header .container,
+  html body .Header .container{
+    min-height:auto!important;
+    flex-wrap:wrap!important;
+    justify-content:center!important;
+    gap:10px!important;
+    padding:10px!important;
+  }
+
+  html body .Header-title{
+    margin:0!important;
+    order:1!important;
+  }
+
+  html body .Header-primary{
+    order:3!important;
+    width:100%!important;
+    flex:1 1 100%!important;
+    justify-content:center!important;
+  }
+
+  html body .Header-secondary{
+    order:2!important;
+    justify-content:center!important;
+    flex-wrap:wrap!important;
+  }
+
+  html body .Search{
+    order:4!important;
+    width:100%!important;
+    max-width:520px!important;
+    flex:1 1 100%!important;
+  }
+}

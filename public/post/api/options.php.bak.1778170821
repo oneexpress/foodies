@@ -1,0 +1,95 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=UTF-8');
+
+function out($arr){ echo json_encode($arr, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); exit; }
+
+$type = $_GET['type'] ?? '';
+$target = $_GET['target'] ?? 'china';
+$loc = $_GET['loc'] ?? '';
+
+$rows = [];
+
+if ($type === 'nationalities') {
+  $rows = $target === 'foreign'
+    ? [
+      ['slug'=>'indonesia','name_zh'=>'印尼','name_en'=>'Indonesia'],
+      ['slug'=>'bangladesh','name_zh'=>'孟加拉','name_en'=>'Bangladesh'],
+      ['slug'=>'nepal','name_zh'=>'尼泊尔','name_en'=>'Nepal'],
+      ['slug'=>'myanmar','name_zh'=>'缅甸','name_en'=>'Myanmar'],
+      ['slug'=>'vietnam','name_zh'=>'越南','name_en'=>'Vietnam'],
+      ['slug'=>'india','name_zh'=>'印度','name_en'=>'India'],
+      ['slug'=>'philippines','name_zh'=>'菲律宾','name_en'=>'Philippines'],
+      ['slug'=>'cambodia','name_zh'=>'柬埔寨','name_en'=>'Cambodia'],
+      ['slug'=>'pakistan','name_zh'=>'巴基斯坦','name_en'=>'Pakistan'],
+      ['slug'=>'thailand','name_zh'=>'泰国','name_en'=>'Thailand'],
+      ['slug'=>'malaysia','name_zh'=>'马来西亚','name_en'=>'Malaysia'],
+    ]
+    : [
+      ['slug'=>'china','name_zh'=>'中国','name_en'=>'China'],
+      ['slug'=>'malaysia','name_zh'=>'马来西亚','name_en'=>'Malaysia'],
+    ];
+  out(['ok'=>true,'rows'=>$rows]);
+}
+
+if ($type === 'categories') {
+  $rows = [
+    ['slug'=>'svc-visa-permit','name_zh'=>'签证与准证','name_en'=>'VISA & PERMIT'],
+    ['slug'=>'svc-marketplace','name_zh'=>'餐车商机','name_en'=>'F&B Marketplace'],
+    ['slug'=>'svc-jobs-posting','name_zh'=>'外劳招聘','name_en'=>'JOBS POSTING'],
+    ['slug'=>'svc-transport','name_zh'=>'豪华 MPV 租车','name_en'=>'Luxury MPV Rental'],
+    ['slug'=>'svc-accommodation','name_zh'=>'高级民宿','name_en'=>'Premium Homestay'],
+    ['slug'=>'svc-agency-helpdesk','name_zh'=>'中介服务台','name_en'=>'Agency Helpdesk'],
+  ];
+  out(['ok'=>true,'rows'=>$rows]);
+}
+
+if ($type === 'locations') {
+  $rows = [
+    ['slug'=>'kuala-lumpur','name_zh'=>'吉隆坡','name_en'=>'Kuala Lumpur'],
+    ['slug'=>'selangor','name_zh'=>'雪兰莪','name_en'=>'Selangor'],
+    ['slug'=>'johor-bahru','name_zh'=>'新山','name_en'=>'Johor Bahru'],
+    ['slug'=>'penang','name_zh'=>'槟城','name_en'=>'Penang'],
+    ['slug'=>'melaka','name_zh'=>'马六甲','name_en'=>'Melaka'],
+    ['slug'=>'ipoh','name_zh'=>'怡保','name_en'=>'Ipoh'],
+    ['slug'=>'kuching','name_zh'=>'古晋','name_en'=>'Kuching'],
+    ['slug'=>'kota-kinabalu','name_zh'=>'亚庇','name_en'=>'Kota Kinabalu'],
+    ['slug'=>'cyberjaya','name_zh'=>'赛城','name_en'=>'Cyberjaya'],
+    ['slug'=>'putrajaya','name_zh'=>'布城','name_en'=>'Putrajaya'],
+  ];
+  out(['ok'=>true,'rows'=>$rows]);
+}
+
+$subs = [
+  'kuala-lumpur'=>[
+    ['slug'=>'klcc','name_zh'=>'KLCC','name_en'=>'KLCC'],
+    ['slug'=>'bukit-bintang','name_zh'=>'武吉免登','name_en'=>'Bukit Bintang'],
+    ['slug'=>'mont-kiara','name_zh'=>'满家乐','name_en'=>'Mont Kiara'],
+    ['slug'=>'bangsar','name_zh'=>'孟沙','name_en'=>'Bangsar'],
+    ['slug'=>'cheras','name_zh'=>'蕉赖','name_en'=>'Cheras'],
+    ['slug'=>'setapak','name_zh'=>'文良港','name_en'=>'Setapak'],
+    ['slug'=>'kepong','name_zh'=>'甲洞','name_en'=>'Kepong'],
+    ['slug'=>'sri-petaling','name_zh'=>'大城堡','name_en'=>'Sri Petaling'],
+    ['slug'=>'taman-desa','name_zh'=>'Taman Desa','name_en'=>'Taman Desa'],
+    ['slug'=>'ampang','name_zh'=>'安邦','name_en'=>'Ampang'],
+  ],
+  'selangor'=>[
+    ['slug'=>'petaling-jaya','name_zh'=>'八打灵再也','name_en'=>'Petaling Jaya'],
+    ['slug'=>'subang-jaya','name_zh'=>'梳邦再也','name_en'=>'Subang Jaya'],
+    ['slug'=>'shah-alam','name_zh'=>'莎阿南','name_en'=>'Shah Alam'],
+    ['slug'=>'puchong','name_zh'=>'蒲种','name_en'=>'Puchong'],
+    ['slug'=>'klang','name_zh'=>'巴生','name_en'=>'Klang'],
+    ['slug'=>'kajang','name_zh'=>'加影','name_en'=>'Kajang'],
+    ['slug'=>'selayang','name_zh'=>'士拉央','name_en'=>'Selayang'],
+    ['slug'=>'rawang','name_zh'=>'万挠','name_en'=>'Rawang'],
+    ['slug'=>'cyberjaya-selangor','name_zh'=>'赛城雪州区','name_en'=>'Cyberjaya Selangor Side'],
+    ['slug'=>'sepang','name_zh'=>'雪邦','name_en'=>'Sepang'],
+  ],
+];
+
+if ($type === 'sublocations') {
+  out(['ok'=>true,'rows'=>$subs[$loc] ?? []]);
+}
+
+out(['ok'=>false,'error'=>'unknown_type','rows'=>[]]);
+

@@ -1,0 +1,43 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=utf-8');
+
+require_once __DIR__ . '/../../inc/vusdt-treasury.php';
+
+$wallet = trim((string)($_POST['wallet'] ?? $_GET['wallet'] ?? ''));
+$tx     = trim((string)($_POST['tx_hash'] ?? $_GET['tx_hash'] ?? ''));
+$amount = (float)($_POST['amount'] ?? $_GET['amount'] ?? 0);
+$sender = trim((string)($_POST['sender_wallet'] ?? $_GET['sender_wallet'] ?? $wallet));
+$payload = trim((string)($_POST['payload_ref'] ?? $_GET['payload_ref'] ?? ''));
+
+if ($wallet === '' || $tx === '' || $amount <= 0) {
+    echo json_encode(['ok'=>false,'error'=>'INVALID_INPUT']); exit;
+}
+
+$pdo = ev_vusdt_pdo();
+
+$st = $pdo->prepare("
+INSERT IGNORE INTO ev_vusdt_ton_deposits
+(tx_hash,sender_wallet,user_wallet,amount_usdt_ton,payload_ref,status,raw_json)
+VALUES (?,?,?,?,?,'pending',?)
+");
+$st->execute([
+    $tx,
+    $sender,
+    $wallet,
+    number_format($amount,6,'.',''),
+    $payload ?: null,
+    json_encode(['source'=>'user_submit','input'=>$_REQUEST], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)
+]);
+
+echo json_encode([
+  'ok'=>true,
+  'status'=>'pending',
+  'tx_hash'=>$tx,
+  'wallet'=>$wallet,
+  'amount'=>number_format($amount,6,'.','')
+], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

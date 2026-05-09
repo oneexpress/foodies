@@ -1,0 +1,64 @@
+<?php
+declare(strict_types=1);
+
+header('Content-Type: application/json; charset=utf-8');
+ini_set('display_errors','0');
+error_reporting(E_ALL);
+
+function out($arr, int $code=200): void {
+  http_response_code($code);
+  echo json_encode($arr, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
+try {
+  $raw = file_get_contents('php://input') ?: '';
+  $data = json_decode($raw, true);
+  if (!is_array($data)) $data = [];
+
+  $ton = trim((string)($data['ton_wallet'] ?? ''));
+
+  $okFriendly = (bool)preg_match('/^(UQ|EQ)[A-Za-z0-9_-]{40,}$/', $ton);
+  $okRaw = (bool)preg_match('/^-?[0-9]+:[a-fA-F0-9]{64}$/', $ton);
+
+  if (!$okFriendly && !$okRaw) {
+    out(["ok"=>false,"error"=>"INVALID_TON_WALLET","received"=>$ton], 400);
+  }
+
+  $user = $_COOKIE['ev_wallet_user'] ?? '';
+  if (!$user) {
+    $user = 'EVW'.date('ymd').strtoupper(substr(bin2hex(random_bytes(4)),0,8));
+    setcookie('ev_wallet_user', $user, time()+86400*365, '/');
+  }
+
+  $walletRaw = json_encode($data['wallet_raw'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+  $pdo = new PDO(
+    "mysql:host=localhost;dbname=visa_db;charset=utf8mb4",
+    "oneexpressvisa",
+    '$Express4653',
+    [
+      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]
+  );
+
+  $stmt = $pdo->prepare("
+    INSERT INTO ev_ton_wallets(user_key, ton_wallet, wallet_raw, is_active)
+    VALUES(?,?,?,1)
+    ON DUPLICATE KEY UPDATE
+      user_key=VALUES(user_key),
+      wallet_raw=VALUES(wallet_raw),
+      is_active=1,
+      updated_at=NOW()
+  ");
+  $stmt->execute([$user, $ton, $walletRaw]);
+
+  setcookie('ev_ton_wallet', $ton, time()+86400*365, '/');
+
+  out(["ok"=>true,"user"=>$user,"ton_wallet"=>$ton]);
+
+} catch (Throwable $e) {
+  out(["ok"=>false,"error"=>"SERVER_ERROR","message"=>$e->getMessage()], 500);
+}
+

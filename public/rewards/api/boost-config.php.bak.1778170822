@@ -1,0 +1,15 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=utf-8');
+
+echo json_encode([
+  'ok'=>true,
+  'engine'=>'Foodies Rewards Engine',
+  'rule'=>'1 vUSDT = +0.003 multiplier',
+  'formula'=>'boost = min(30, 1 + (vUSDT * 0.003))',
+  'coefficient'=>0.003,
+  'max_boost'=>30,
+  'base_rate'=>'0.3300 vShare / 10s',
+  'max_rate'=>'9.9000 vShare / 10s'
+], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);
+

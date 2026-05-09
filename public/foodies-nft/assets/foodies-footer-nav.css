@@ -1,0 +1,35 @@
+.foodies-footer-nav{
+  position:fixed!important;left:8px!important;right:8px!important;bottom:8px!important;z-index:99999!important;
+  background:rgba(255,255,255,.98)!important;border:1px solid rgba(230,0,18,.16)!important;border-radius:26px!important;
+  box-shadow:0 20px 56px rgba(16,24,40,.24)!important;padding:10px!important;
+  display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:8px!important;backdrop-filter:blur(18px)!important;
+}
+.foodies-footer-nav a,.foodies-footer-nav button{
+  min-width:0!important;height:72px!important;border-radius:20px!important;border:1px solid transparent!important;background:#fff!important;color:#111!important;
+  text-decoration:none!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  gap:5px!important;font-weight:1000!important;font-size:12px!important;line-height:1.05!important;cursor:pointer!important;padding:6px!important;
+}
+.foodies-footer-nav a:hover,.foodies-footer-nav button:hover{background:#fff5f6!important;border-color:rgba(230,0,18,.28)!important}
+.foodies-footer-nav .ico{
+  width:37px!important;height:37px!important;border-radius:15px!important;background:#e60012!important;color:#fff!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;
+}
+.foodies-footer-nav .active{background:#e60012!important;color:#fff!important}
+.foodies-footer-nav .active .ico{background:#b8000e!important}
+.foodies-wallet-led{
+  width:12px!important;height:12px!important;border-radius:50%!important;background:#ef4444!important;display:block!important;
+  box-shadow:0 0 0 5px rgba(239,68,68,.13),0 0 16px rgba(239,68,68,.75)!important;
+}
+.foodies-wallet-led.on{
+  background:#22c55e!important;
+  box-shadow:0 0 0 5px rgba(34,197,94,.16),0 0 18px rgba(34,197,94,.95)!important;
+}
+.foodies-footer-small{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:10px!important;opacity:.82!important}
+body{padding-bottom:112px!important}
+@media(max-width:880px){
+  .foodies-footer-nav{left:5px!important;right:5px!important;bottom:5px!important;border-radius:22px!important;padding:7px!important;gap:5px!important}
+  .foodies-footer-nav a,.foodies-footer-nav button{height:62px!important;border-radius:15px!important;font-size:9.6px!important;padding:4px 2px!important}
+  .foodies-footer-nav .ico{width:29px!important;height:29px!important;border-radius:11px!important;font-size:14px!important}
+  .foodies-footer-small{display:none!important}
+  body{padding-bottom:84px!important}
+}

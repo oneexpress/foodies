@@ -1,0 +1,120 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store');
+
+function out(array $a): void {
+  echo json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+  exit;
+}
+
+$wallet = trim((string)($_POST['wallet'] ?? $_GET['wallet'] ?? ''));
+if ($wallet === '') out(['ok'=>false,'error'=>'wallet_required','message'=>'Connect Wallet required']);
+
+$pdo = new PDO('mysql:host=localhost;dbname=visa_db;charset=utf8mb4', 'root', '', [
+  PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+  PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+]);
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS ev_reward_profiles (
+  wallet VARCHAR(128) PRIMARY KEY,
+  total_score DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  total_vshare DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  vusdt_offchain DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  daily_vshare DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  daily_date DATE NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS ev_reward_ledger (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  wallet VARCHAR(128) NOT NULL,
+  event_ref VARCHAR(128) NOT NULL UNIQUE,
+  score_delta DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  vshare_delta DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  boost_vusdt DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  note VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_wallet(wallet),
+  KEY idx_created(created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS ev_wallet_balances (
+  wallet VARCHAR(128) NOT NULL,
+  token VARCHAR(32) NOT NULL,
+  balance DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY(wallet, token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$today = date('Y-m-d');
+$pdo->prepare("INSERT IGNORE INTO ev_reward_profiles(wallet,daily_date) VALUES(?,?)")->execute([$wallet,$today]);
+$pdo->prepare("UPDATE ev_reward_profiles SET daily_vshare=0,daily_date=? WHERE wallet=? AND (daily_date IS NULL OR daily_date<>?)")->execute([$today,$wallet,$today]);
+
+$pdo->beginTransaction();
+
+$p = $pdo->prepare("SELECT * FROM ev_reward_profiles WHERE wallet=? FOR UPDATE");
+$p->execute([$wallet]);
+$row = $p->fetch();
+
+$b = $pdo->prepare("SELECT balance FROM ev_wallet_balances WHERE wallet=? AND token='vUSDT'");
+$b->execute([$wallet]);
+$vusdtWallet = (float)($b->fetchColumn() ?: 0);
+$vusdt = max((float)($row['vusdt_offchain'] ?? 0), $vusdtWallet);
+
+$reward = 0.003;
+$scoreDelta = $reward * 250;
+$daily = (float)($row['daily_vshare'] ?? 0);
+
+if (($daily + $reward) > 10.000000) {
+  $pdo->rollBack();
+  out(['ok'=>false,'error'=>'daily_cap_reached','daily_vshare'=>$daily,'daily_cap'=>10]);
+}
+
+$eventRef = 'DIG-' . date('YmdHis') . '-' . substr(hash('sha256', $wallet . microtime(true) . random_int(1, PHP_INT_MAX)), 0, 12);
+
+$ins = $pdo->prepare("INSERT INTO ev_reward_ledger(wallet,event_ref,score_delta,vshare_delta,boost_vusdt,note) VALUES(?,?,?,?,?,?)");
+$ins->execute([$wallet,$eventRef,$scoreDelta,$reward,$vusdt,'Digging Reward']);
+
+$upd = $pdo->prepare("UPDATE ev_reward_profiles
+  SET total_vshare=total_vshare+?,
+      total_score=total_score+?,
+      daily_vshare=daily_vshare+?,
+      daily_date=?,
+      vusdt_offchain=GREATEST(vusdt_offchain, ?)
+  WHERE wallet=?");
+$upd->execute([$reward,$scoreDelta,$reward,$today,$vusdt,$wallet]);
+
+$sync1 = $pdo->prepare("INSERT INTO ev_wallet_balances(wallet,token,balance)
+  SELECT wallet,'vSHARE',total_vshare FROM ev_reward_profiles WHERE wallet=?
+  ON DUPLICATE KEY UPDATE balance=VALUES(balance), updated_at=CURRENT_TIMESTAMP");
+$sync1->execute([$wallet]);
+
+$sync2 = $pdo->prepare("INSERT INTO ev_wallet_balances(wallet,token,balance)
+  SELECT wallet,'SCORE',total_score FROM ev_reward_profiles WHERE wallet=?
+  ON DUPLICATE KEY UPDATE balance=VALUES(balance), updated_at=CURRENT_TIMESTAMP");
+$sync2->execute([$wallet]);
+
+$sync3 = $pdo->prepare("INSERT INTO ev_wallet_balances(wallet,token,balance) VALUES(?,?,?)
+  ON DUPLICATE KEY UPDATE balance=GREATEST(balance,VALUES(balance)), updated_at=CURRENT_TIMESTAMP");
+$sync3->execute([$wallet,'vUSDT',$vusdt]);
+
+$p2 = $pdo->prepare("SELECT * FROM ev_reward_profiles WHERE wallet=?");
+$p2->execute([$wallet]);
+$final = $p2->fetch();
+
+$pdo->commit();
+
+out([
+  'ok'=>true,
+  'wallet'=>$wallet,
+  'event_ref'=>$eventRef,
+  'reward_delta'=>$reward,
+  'score_delta'=>$scoreDelta,
+  'vshare'=>(float)$final['total_vshare'],
+  'score'=>(float)$final['total_score'],
+  'daily_vshare'=>(float)$final['daily_vshare'],
+  'daily_cap'=>10,
+  'vusdt_offchain'=>$vusdt,
+  'boost_multiplier'=>1 + ($vusdt * 0.003),
+]);

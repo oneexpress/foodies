@@ -1,0 +1,5 @@
+<FilesMatch "\.(json)$">
+Header set Content-Type "application/json; charset=UTF-8"
+Header set Access-Control-Allow-Origin "*"
+Header set Cache-Control "public, max-age=300"
+</FilesMatch>

@@ -1,0 +1,78 @@
+# =========================
+# ENV / SECRET
+# =========================
+.env
+.env.*
+*.pem
+*.key
+*.csr
+*.p12
+*.ovpn
+*.crt
+
+# =========================
+# WALLET / TON SECRET
+# =========================
+mnemonic.txt
+seed.txt
+wallet.txt
+*.seed
+*.mnemonic
+
+# =========================
+# NODE / COMPOSER
+# =========================
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+
+# =========================
+# CACHE / STORAGE / LOG
+# =========================
+storage/
+cache/
+logs/
+tmp/
+sessions/
+system/storage/
+*.log
+
+# =========================
+# BACKUP / DUMP
+# =========================
+*.bak
+*.backup
+*.old
+*.save
+*.tmp
+*.sql
+*.sqlite
+*.gz
+*.zip
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# RWA / NFT TEMP
+# =========================
+public/rwa/cert/tmp/
+public/foodies-nft/tmp/
+public/metadata/foodies/tmp/
+
+# =========================
+# OPENCART SENSITIVE
+# =========================
+public/marketplace/config.php
+public/marketplace/admin/config.php
+
+# =========================
+# DO NOT PUSH PRIVATE BACKUPS
+# =========================
+backup/
+backups/
+restore/

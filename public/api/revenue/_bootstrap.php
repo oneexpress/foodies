@@ -1,0 +1,47 @@
+<?php
+declare(strict_types=1);
+require_once $_SERVER['DOCUMENT_ROOT'].'/inc/ev991-db.php';
+
+function ev991_revenue_bootstrap(PDO $pdo): void {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ev991_revenue_events (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        event_uid VARCHAR(80) NOT NULL UNIQUE,
+        source_type VARCHAR(60) NOT NULL DEFAULT 'manual',
+        source_ref VARCHAR(120) NULL,
+        gross_amount DECIMAL(24,8) NOT NULL DEFAULT 0,
+        platform_rate DECIMAL(12,8) NOT NULL DEFAULT 0.25000000,
+        pool_rate DECIMAL(12,8) NOT NULL DEFAULT 0.15000000,
+        platform_share DECIMAL(24,8) NOT NULL DEFAULT 0,
+        reward_pool_amount DECIMAL(24,8) NOT NULL DEFAULT 0,
+        currency VARCHAR(20) NOT NULL DEFAULT 'vUSDT',
+        status VARCHAR(24) NOT NULL DEFAULT 'confirmed',
+        meta_json LONGTEXT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY status_created (status, created_at),
+        KEY source_type (source_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ev991_revenue_distributions (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        wallet VARCHAR(128) NOT NULL,
+        event_uid VARCHAR(80) NOT NULL,
+        share_weight DECIMAL(24,8) NOT NULL DEFAULT 0,
+        share_amount DECIMAL(24,8) NOT NULL DEFAULT 0,
+        status VARCHAR(24) NOT NULL DEFAULT 'credited',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY wallet_event (wallet, event_uid),
+        KEY wallet (wallet),
+        KEY event_uid (event_uid)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+function ev991_current_wallet(): string {
+    if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+    return trim((string)($_SESSION['ton_wallet'] ?? $_SESSION['wallet'] ?? $_GET['wallet'] ?? $_POST['wallet'] ?? ''));
+}
+function ev991_rev_uid(): string {
+    return 'REV-'.date('YmdHis').'-'.substr(hash('sha256', random_bytes(16)),0,10);
+}
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

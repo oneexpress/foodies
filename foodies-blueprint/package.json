@@ -1,0 +1,24 @@
+{
+  "name": "foodies-blueprint",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "blueprint build",
+    "deploy": "blueprint run deployFoodiesCollection --mainnet --tonconnect",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ton-community/func-js": "0.6.3",
+    "@ton-community/func-js-bin": "0.4.5",
+    "@ton/blueprint": "0.20.0",
+    "@ton/core": "^0.61.0",
+    "@ton/crypto": "^3.2.0",
+    "@ton/ton": "^15.1.0",
+    "dotenv": "16.5.0",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.21",
+    "typescript": "^5.4.5"
+  }
+}

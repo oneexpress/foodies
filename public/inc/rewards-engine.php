@@ -1,0 +1,219 @@
+<?php
+declare(strict_types=1);
+
+function ev_rewards_db(): PDO {
+    static $pdo = null;
+    if ($pdo instanceof PDO) return $pdo;
+
+    $candidates = [
+        '/var/www/html/visa/public/config.php',
+        '/var/www/html/visa/public/marketplace/config.php',
+    ];
+
+    $dbHost = 'localhost';
+    $dbName = 'visa_db';
+    $dbUser = 'oneexpressvisa';
+    $dbPass = '';
+
+    foreach ($candidates as $cfg) {
+        if (is_file($cfg)) {
+            $txt = file_get_contents($cfg);
+            if (preg_match("/define\\('DB_HOSTNAME',\\s*'([^']*)'\\)/", $txt, $m)) $dbHost = $m[1];
+            if (preg_match("/define\\('DB_USERNAME',\\s*'([^']*)'\\)/", $txt, $m)) $dbUser = $m[1];
+            if (preg_match("/define\\('DB_PASSWORD',\\s*'([^']*)'\\)/", $txt, $m)) $dbPass = $m[1];
+            break;
+        }
+    }
+
+    $pdo = new PDO(
+        "mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4",
+        $dbUser,
+        $dbPass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
+    return $pdo;
+}
+
+function ev_active_wallet(): string {
+    foreach (['ev_ton_wallet', 'wallet', 'ton_wallet'] as $k) {
+        if (!empty($_COOKIE[$k])) return trim((string)$_COOKIE[$k]);
+    }
+    return '';
+}
+
+function ev_vshare_balance(string $wallet): string {
+    if ($wallet === '') return '0.0000';
+    $pdo = ev_rewards_db();
+    $st = $pdo->prepare("
+        SELECT COALESCE(SUM(
+            CASE
+              WHEN direction='earn' THEN amount
+              WHEN direction='adjust' THEN amount
+              WHEN direction='redeem' THEN -amount
+              ELSE 0
+            END
+        ),0) AS bal
+        FROM ev_rewards_ledger
+        WHERE wallet=?
+    ");
+    $st->execute([$wallet]);
+    return number_format((float)$st->fetchColumn(), 4, '.', '');
+}
+
+function ev_reward_vshare(string $wallet, float $amount, string $action, ?string $ref = null, array $meta = []): bool {
+    $wallet = trim($wallet);
+    if ($wallet === '' || $amount <= 0) return false;
+    $pdo = ev_rewards_db();
+
+    if ($ref !== null && $ref !== '') {
+        $dupe = $pdo->prepare("SELECT id FROM ev_rewards_ledger WHERE wallet=? AND action=? AND ref=? LIMIT 1");
+        $dupe->execute([$wallet, $action, $ref]);
+        if ($dupe->fetch()) return true;
+    }
+
+    $st = $pdo->prepare("
+        INSERT INTO ev_rewards_ledger(wallet,direction,action,amount,ref,meta_json)
+        VALUES(?, 'earn', ?, ?, ?, ?)
+    ");
+    return $st->execute([
+        $wallet,
+        $action,
+        number_format($amount, 6, '.', ''),
+        $ref,
+        $meta ? json_encode($meta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null
+    ]);
+}
+
+function ev_redeem_vshare(string $wallet, string $type, float $amount, array $meta = []): array {
+    $wallet = trim($wallet);
+    $allowed = ['foodies_rwa_nft','food_tasting','participation_boost'];
+    if ($wallet === '' || !in_array($type, $allowed, true) || $amount <= 0) {
+        return ['ok'=>false, 'error'=>'INVALID_REDEEM_REQUEST'];
+    }
+
+    $bal = (float) ev_vshare_balance($wallet);
+    if ($bal < $amount) return ['ok'=>false, 'error'=>'INSUFFICIENT_VSHARE', 'balance'=>number_format($bal,4,'.','')];
+
+    $pdo = ev_rewards_db();
+    $ref = 'FRD-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+    $pdo->beginTransaction();
+    try {
+        $st = $pdo->prepare("
+            INSERT INTO ev_rewards_redeems(redeem_ref,wallet,redeem_type,vshare_amount,status,meta_json)
+            VALUES(?,?,?,?, 'pending', ?)
+        ");
+        $st->execute([$ref, $wallet, $type, number_format($amount,6,'.',''), $meta ? json_encode($meta, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) : null]);
+
+        $lg = $pdo->prepare("
+            INSERT INTO ev_rewards_ledger(wallet,direction,action,amount,ref,meta_json)
+            VALUES(?, 'redeem', ?, ?, ?, ?)
+        ");
+        $lg->execute([$wallet, 'redeem_'.$type, number_format($amount,6,'.',''), $ref, json_encode(['redeem_type'=>$type], JSON_UNESCAPED_UNICODE)]);
+
+        $pdo->commit();
+        return ['ok'=>true, 'redeem_ref'=>$ref, 'balance'=>ev_vshare_balance($wallet)];
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        return ['ok'=>false, 'error'=>'REDEEM_FAILED'];
+    }
+}
+
+
+/* VSHARE_LEDGER_CORE */
+function ev_history_write($pdo, $wallet, $type, $token, $amount, $meta=[]) {
+    $stmt = $pdo->prepare("
+        INSERT INTO ev_wallet_ledger
+        (wallet, type, token, amount, meta_json, created_at)
+        VALUES (:wallet,:type,:token,:amount,:meta,NOW())
+    ");
+    $stmt->execute([
+        ':wallet'=>$wallet,
+        ':type'=>$type,
+        ':token'=>$token,
+        ':amount'=>$amount,
+        ':meta'=>json_encode($meta)
+    ]);
+}
+
+function ev_vshare_credit($pdo, $wallet, $amount, $reason='reward') {
+    ev_history_write($pdo,$wallet,'credit','vShare',$amount,[
+        'reason'=>$reason
+    ]);
+}
+
+function ev_vshare_debit($pdo, $wallet, $amount, $reason='redeem') {
+    ev_history_write($pdo,$wallet,'debit','vShare',$amount,[
+        'reason'=>$reason
+    ]);
+}
+
+/* FOODIES_BOOST_STREAK_CORE_START */
+function ev_rewards_active_multiplier(string $wallet): float {
+    if ($wallet === '') return 1.0;
+    $pdo = ev_rewards_db();
+
+    $pdo->prepare("UPDATE ev_rewards_boosts SET status='expired' WHERE status='active' AND expires_at IS NOT NULL AND expires_at < NOW()")->execute();
+
+    $st = $pdo->prepare("
+        SELECT COALESCE(SUM(multiplier - 1.0000),0)
+        FROM ev_rewards_boosts
+        WHERE wallet=? AND status='active'
+          AND (expires_at IS NULL OR expires_at >= NOW())
+    ");
+    $st->execute([$wallet]);
+    $extra = (float)$st->fetchColumn();
+
+    return max(1.0, 1.0 + $extra);
+}
+
+function ev_rewards_touch_daily_streak(string $wallet): array {
+    if ($wallet === '') return ['streak_days'=>0,'multiplier'=>1.0];
+
+    $pdo = ev_rewards_db();
+    $today = date('Y-m-d');
+    $yesterday = date('Y-m-d', time() - 86400);
+
+    $st = $pdo->prepare("SELECT * FROM ev_rewards_streaks WHERE wallet=? LIMIT 1");
+    $st->execute([$wallet]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        $pdo->prepare("INSERT INTO ev_rewards_streaks(wallet,streak_days,last_seen_date) VALUES(?,1,?)")->execute([$wallet,$today]);
+        $days = 1;
+    } elseif ((string)$row['last_seen_date'] === $today) {
+        $days = (int)$row['streak_days'];
+    } else {
+        $days = ((string)$row['last_seen_date'] === $yesterday) ? ((int)$row['streak_days'] + 1) : 1;
+        $pdo->prepare("UPDATE ev_rewards_streaks SET streak_days=?, last_seen_date=? WHERE wallet=?")->execute([$days,$today,$wallet]);
+    }
+
+    $multiplier = 1.0 + min(0.30, max(0, $days - 1) * 0.02);
+    return ['streak_days'=>$days,'multiplier'=>$multiplier];
+}
+
+function ev_rewards_add_boost(string $wallet, string $type, float $multiplier, string $ref='', int $hours=24, array $meta=[]): bool {
+    $wallet = trim($wallet);
+    if ($wallet === '' || $multiplier <= 1.0) return false;
+
+    $pdo = ev_rewards_db();
+    $st = $pdo->prepare("
+        INSERT INTO ev_rewards_boosts(wallet,boost_type,multiplier,ref,expires_at,meta_json)
+        VALUES(?,?,?,?,DATE_ADD(NOW(), INTERVAL ? HOUR),?)
+    ");
+    return $st->execute([
+        $wallet,
+        $type,
+        number_format($multiplier,4,'.',''),
+        $ref ?: null,
+        $hours,
+        $meta ? json_encode($meta, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) : null
+    ]);
+}
+/* FOODIES_BOOST_STREAK_CORE_END */
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

@@ -1,0 +1,44 @@
+{
+  "services": [
+    {"key":"visa_permit","name":"Visa & Permit","label":"VISA & PERMIT"},
+    {"key":"marketplace","name":"FoodTruck Marketplace","label":"MARKETPLACE"},
+    {"key":"jobs","name":"Jobs Posting","label":"JOBS POSTING"},
+    {"key":"mpv","name":"Luxury MPV Rental","label":"LUXURY MPV RENTAL"},
+    {"key":"homestay","name":"Premium Homestay","label":"PREMIUM HOMESTAY"},
+    {"key":"loan","name":"Online Loan Apply","label":"ONLINE LOAN APPLY"}
+  ],
+  "nationalities": [
+    {"key":"indonesia","name":"Indonesia","flag":"id"},
+    {"key":"bangladesh","name":"Bangladesh","flag":"bd"},
+    {"key":"nepal","name":"Nepal","flag":"np"},
+    {"key":"pakistan","name":"Pakistan","flag":"pk"},
+    {"key":"myanmar","name":"Myanmar","flag":"mm"},
+    {"key":"india","name":"India","flag":"in"},
+    {"key":"philippines","name":"Philippines","flag":"ph"},
+    {"key":"cambodia","name":"Cambodia","flag":"kh"},
+    {"key":"vietnam","name":"Vietnam","flag":"vn"},
+    {"key":"thailand","name":"Thailand","flag":"th"}
+  ],
+  "locations": [
+    {
+      "key":"kuala_lumpur",
+      "name":"Kuala Lumpur",
+      "areas":["KLCC","Bukit Bintang","Mont Kiara","Cheras","Setapak","Wangsa Maju","Ampang","Sri Petaling","Bangsar","Kepong"]
+    },
+    {
+      "key":"selangor",
+      "name":"Selangor",
+      "areas":["Petaling Jaya","Subang Jaya","Puchong","Shah Alam","Klang","Cyberjaya","Kajang","Seri Kembangan","Rawang","Sungai Buloh"]
+    },
+    {
+      "key":"johor_bahru",
+      "name":"Johor Bahru",
+      "areas":["Johor Bahru City","Skudai","Tebrau","Mount Austin","Permas Jaya","Pasir Gudang","Iskandar Puteri","Bukit Indah","Kulai","Senai"]
+    },
+    {
+      "key":"other_cities",
+      "name":"Other Cities",
+      "areas":["Penang (George Town)","Ipoh","Melaka","Kota Kinabalu","Kuching"]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=utf-8');
+
+try {
+  $raw = file_get_contents('php://input') ?: '';
+  $j = json_decode($raw, true);
+  if (!is_array($j)) $j = [];
+
+  $pdo = new PDO(
+    "mysql:host=localhost;dbname=visa_ops_db;charset=utf8mb4",
+    "oneexpressvisa",
+    '$Express4653',
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+  );
+
+  $pdo->exec("CREATE TABLE IF NOT EXISTS ev_pixel_events (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    event_name VARCHAR(120) NOT NULL,
+    payload LONGTEXT NULL,
+    ip VARCHAR(64) NULL,
+    user_agent TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(id),
+    KEY idx_event(event_name),
+    KEY idx_created(created_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+  $stmt = $pdo->prepare("INSERT INTO ev_pixel_events(event_name,payload,ip,user_agent) VALUES(?,?,?,?)");
+  $stmt->execute([
+    (string)($j['event'] ?? 'EV_Unknown'),
+    json_encode($j['data'] ?? [], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),
+    $_SERVER['REMOTE_ADDR'] ?? '',
+    $_SERVER['HTTP_USER_AGENT'] ?? ''
+  ]);
+
+  echo json_encode(['ok'=>true]);
+} catch (Throwable $e) {
+  http_response_code(500);
+  echo json_encode(['ok'=>false]);
+}
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

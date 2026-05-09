@@ -1,0 +1,74 @@
+<?php
+declare(strict_types=1);
+
+require_once '/var/www/html/visa/public/marketplace/config.php';
+
+function ev_db(): mysqli {
+    $db = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+    $db->set_charset('utf8mb4');
+    return $db;
+}
+
+function ev_clean_whatsapp(string $phone): string {
+    $p = preg_replace('/\D+/', '', $phone);
+    if ($p === '') return '';
+    if (str_starts_with($p, '0')) $p = '60' . substr($p, 1);
+    if (!str_starts_with($p, '60')) $p = '60' . $p;
+    return $p;
+}
+
+function ev_wa_link(string $phone, string $title): string {
+    $p = ev_clean_whatsapp($phone);
+    $msg = rawurlencode("Hi, I am interested in this ExpressVisa listing: {$title}");
+    return $p ? "https://wa.me/{$p}?text={$msg}" : '';
+}
+
+function ev_create_opencart_product(array $r): int {
+    $db = ev_db();
+    $p = DB_PREFIX;
+
+    $name = $db->real_escape_string($r['title'] ?? 'ExpressVisa Listing');
+    $desc = $db->real_escape_string(($r['description'] ?? '') . "\n\nWhatsApp: " . ev_wa_link($r['whatsapp'] ?? '', $r['title'] ?? 'ExpressVisa Listing'));
+    $price = (float)($r['price'] ?? 0);
+    $model = 'EV-' . date('YmdHis');
+
+    $db->query("INSERT INTO {$p}product SET model='{$model}', quantity=999, stock_status_id=7, image='', manufacturer_id=0, shipping=0, price={$price}, points=0, tax_class_id=0, date_available=CURDATE(), weight=0, weight_class_id=1, length=0, width=0, height=0, length_class_id=1, subtract=0, minimum=1, sort_order=1, status=1, date_added=NOW(), date_modified=NOW()");
+    $product_id = (int)$db->insert_id;
+
+    $langs = $db->query("SELECT language_id FROM {$p}language");
+    while ($lang = $langs->fetch_assoc()) {
+        $lid = (int)$lang['language_id'];
+        $db->query("INSERT INTO {$p}product_description SET product_id={$product_id}, language_id={$lid}, name='{$name}', description='{$desc}', tag='', meta_title='{$name}', meta_description='', meta_keyword=''");
+    }
+
+    $db->query("INSERT IGNORE INTO {$p}product_to_store SET product_id={$product_id}, store_id=0");
+
+    foreach (['service_category_id','nationality_category_id','location_category_id','area_category_id'] as $k) {
+        $cid = (int)($r[$k] ?? 0);
+        if ($cid > 0) {
+            $db->query("INSERT IGNORE INTO {$p}product_to_category SET product_id={$product_id}, category_id={$cid}");
+        }
+    }
+
+    return $product_id;
+}
+
+function ev_community_template(array $r, int $product_id): string {
+    $title = $r['title'] ?? 'ExpressVisa Listing';
+    $wa = ev_wa_link($r['whatsapp'] ?? '', $title);
+    $url = "https://expressvisa.one/marketplace/index.php?route=product/product&product_id={$product_id}";
+
+    return "## {$title}\n\n"
+        . "**Service:** " . ($r['service_name'] ?? '-') . "\n\n"
+        . "**Nationality:** " . ($r['nationality_name'] ?? '-') . "\n\n"
+        . "**Location:** " . ($r['location_name'] ?? '-') . " / " . ($r['area_name'] ?? '-') . "\n\n"
+        . "### Details\n" . ($r['description'] ?? '') . "\n\n"
+        . "### Quick Contact\n[WhatsApp Direct Contact]({$wa})\n\n"
+        . "### FoodTruck Marketplace Link\n[View Listing]({$url})\n";
+}
+
+function ev_log_publish(array $r, int $product_id): void {
+    $log = '/var/www/html/visa/public/marketplace-submit/publish.log';
+    file_put_contents($log, date('c') . " product_id={$product_id} title=" . ($r['title'] ?? '') . PHP_EOL, FILE_APPEND);
+}
+

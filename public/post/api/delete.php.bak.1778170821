@@ -1,0 +1,32 @@
+<?php
+declare(strict_types=1);
+session_start();
+header('Content-Type: application/json');
+
+if(empty($_SESSION['ev_account_id'])){
+  echo json_encode(['ok'=>false,'error'=>'not_logged_in']); exit;
+}
+
+$id = (int)($_POST['id'] ?? 0);
+if(!$id){
+  echo json_encode(['ok'=>false,'error'=>'invalid']); exit;
+}
+
+$pdo=new PDO('mysql:host=localhost;dbname=visa_db;charset=utf8mb4','oneexpressvisa','$Express4653');
+
+$row=$pdo->prepare("SELECT * FROM visa_free_posts WHERE id=?");
+$row->execute([$id]);
+$r=$row->fetch(PDO::FETCH_ASSOC);
+
+if(!$r){
+  echo json_encode(['ok'=>false,'error'=>'not_found']); exit;
+}
+
+if(!in_array($r['sync_status'],['pending','rejected','sync_failed'])){
+  echo json_encode(['ok'=>false,'error'=>'locked']); exit;
+}
+
+$pdo->prepare("DELETE FROM visa_free_posts WHERE id=?")->execute([$id]);
+
+echo json_encode(['ok'=>true]);
+

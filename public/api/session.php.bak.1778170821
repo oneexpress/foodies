@@ -1,0 +1,13 @@
+<?php
+declare(strict_types=1);
+session_start();
+header('Content-Type: application/json; charset=UTF-8');
+
+echo json_encode([
+  'ok' => true,
+  'logged_in' => !empty($_SESSION['ev_account_id']),
+  'account_id' => $_SESSION['ev_account_id'] ?? null,
+  'username' => $_SESSION['ev_username'] ?? '',
+  'ton_address' => $_SESSION['ev_ton_address'] ?? ''
+], JSON_UNESCAPED_UNICODE);
+

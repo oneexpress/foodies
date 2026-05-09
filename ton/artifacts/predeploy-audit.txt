@@ -1,0 +1,4 @@
+== 991 TON PRE-DEPLOY AUDIT ==
+2026-05-07T12:27:46+00:00
+
+PASS: env readable: /var/www/secure/.env

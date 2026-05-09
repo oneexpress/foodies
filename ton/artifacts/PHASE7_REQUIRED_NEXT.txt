@@ -1,0 +1,19 @@
+PHASE 7 RESULT:
+Do not deploy placeholder contracts.
+
+Required next:
+1. Import real TON Jetton master contract.
+2. Import real TON Jetton wallet contract.
+3. Ensure master exposes get_jetton_data.
+4. Ensure master exposes get_wallet_address.
+5. Ensure vUSDT supports treasury mint.
+6. Ensure vSHARE supports genesis mint only + burn.
+7. Rebuild wrappers against the real contract storage layout.
+8. Only then run Blueprint build/deploy.
+
+Locked:
+- No mnemonic.
+- No private key.
+- No nginx.
+- ENV only /var/www/secure/.env.
+- Workspace only /var/www/html/visa/ton.

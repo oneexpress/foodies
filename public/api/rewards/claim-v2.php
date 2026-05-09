@@ -1,0 +1,84 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../../inc/ev991-db.php';
+
+try {
+    if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+
+    $pdo = ev991_pdo();
+    $wallet = trim((string)($_SESSION['ton_wallet'] ?? $_SESSION['wallet'] ?? $_POST['wallet'] ?? $_GET['wallet'] ?? ''));
+    if ($wallet === '') throw new RuntimeException('Wallet session required');
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS ev991_reward_claims (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            wallet VARCHAR(128) NOT NULL,
+            reward_amount DECIMAL(20,8) NOT NULL DEFAULT 0,
+            base_reward DECIMAL(20,8) NOT NULL DEFAULT 0.00300000,
+            vusdt_boost DECIMAL(20,8) NOT NULL DEFAULT 0,
+            nft_weight INT NOT NULL DEFAULT 0,
+            nft_factor DECIMAL(20,8) NOT NULL DEFAULT 0,
+            proof_hash VARCHAR(128) NOT NULL,
+            session_hash VARCHAR(128) NOT NULL,
+            ip_hash VARCHAR(128) NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'confirmed',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY wallet_created (wallet, created_at),
+            UNIQUE KEY proof_hash (proof_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
+    $today = $pdo->prepare("SELECT COALESCE(SUM(reward_amount),0) FROM ev991_reward_claims WHERE wallet=? AND DATE(created_at)=UTC_DATE()");
+    $today->execute([$wallet]);
+    $earnedToday = (float)$today->fetchColumn();
+
+    $dailyCap = 10.0;
+    if ($earnedToday >= $dailyCap) {
+        echo json_encode(['ok'=>false,'error'=>'Daily cap reached','earned_today'=>$earnedToday,'daily_cap'=>$dailyCap], JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    $weightJson = file_get_contents('https://expressvisa.one/api/foodies-nft/weight.php?wallet=' . rawurlencode($wallet));
+    $weightData = json_decode($weightJson ?: '{}', true);
+    $nftWeight = (int)($weightData['total_weight'] ?? 0);
+
+    $vusdt = max(0.0, (float)($_POST['vusdt'] ?? $_GET['vusdt'] ?? 0));
+    $base = 0.003;
+    $boost = $vusdt * 0.003;
+    $factor = $nftWeight * 0.01;
+    $reward = ($base + $boost) * (1 + $factor);
+
+    if (($earnedToday + $reward) > $dailyCap) {
+        $reward = max(0, $dailyCap - $earnedToday);
+    }
+
+    $sessionHash = hash('sha256', session_id() . '|' . $wallet);
+    $ipHash = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|991');
+    $proof = hash('sha256', $wallet . '|' . $reward . '|' . microtime(true) . '|' . $sessionHash);
+
+    $st = $pdo->prepare("
+        INSERT INTO ev991_reward_claims
+        (wallet,reward_amount,base_reward,vusdt_boost,nft_weight,nft_factor,proof_hash,session_hash,ip_hash)
+        VALUES (?,?,?,?,?,?,?,?,?)
+    ");
+    $st->execute([$wallet,$reward,$base,$boost,$nftWeight,$factor,$proof,$sessionHash,$ipHash]);
+
+    echo json_encode([
+        'ok'=>true,
+        'reward_amount'=>round($reward,8),
+        'earned_today'=>round($earnedToday + $reward,8),
+        'daily_cap'=>$dailyCap,
+        'nft_weight'=>$nftWeight,
+        'nft_factor'=>$factor,
+        'proof_hash'=>$proof,
+        'terminology'=>['digging'=>'Digging','reward'=>'Reward']
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['ok'=>false,'error'=>$e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+}
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

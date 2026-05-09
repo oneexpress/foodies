@@ -1,0 +1,125 @@
+(function(){
+  if(window.__EV_WALLET_ONCHAIN_UI__) return;
+  window.__EV_WALLET_ONCHAIN_UI__ = true;
+
+  const API_TOKENS = '/wallet/api/tokens.php';
+  const API_HISTORY = '/wallet/api/history.php';
+
+  function q(s){return document.querySelector(s);}
+  function el(tag, cls, html){const x=document.createElement(tag); if(cls)x.className=cls; if(html!==undefined)x.innerHTML=html; return x;}
+
+  async function getTokens(){
+    const r = await fetch(API_TOKENS, {cache:'no-store'});
+    return await r.json();
+  }
+
+  function findWallet(data){
+    return data.wallet || data.address || data.account || '';
+  }
+
+  function token(data, sym){
+    return (data.tokens && data.tokens[sym]) ? data.tokens[sym] : {};
+  }
+
+  function value(t){
+    return String(t.onchain ?? t.balance ?? '0');
+  }
+
+  function mountPanel(data){
+    if(q('#evOnchainPanel')) return;
+
+    const host = q('main') || q('.container') || document.body;
+    const panel = el('section','ev-onchain-panel');
+    panel.id = 'evOnchainPanel';
+    panel.innerHTML = `
+      <div class="ev-onchain-head">
+        <div>
+          <b>On-chain Wallet</b>
+          <small>Live TON values from /wallet/api/tokens.php</small>
+        </div>
+        <button type="button" id="evRefreshWallet">Refresh</button>
+      </div>
+      <div class="ev-token-grid">
+        <div class="ev-token"><span>TON</span><b id="evTonVal">0</b></div>
+        <div class="ev-token"><span>vUSDT</span><b id="evVusdtVal">0</b></div>
+        <div class="ev-token"><span>vSHARE</span><b id="evVshareVal">0</b></div>
+        <div class="ev-token"><span>USDT-TON</span><b id="evUsdtTonVal">0</b></div>
+      </div>
+      <div class="ev-transfer-row">
+        <button type="button" data-transfer-token="vUSDT">Transfer vUSDT</button>
+        <button type="button" data-transfer-token="vSHARE">Transfer vSHARE</button>
+      </div>
+      <div class="ev-history">
+        <div class="ev-history-title">Transaction History</div>
+        <div id="evTxList">Loading...</div>
+      </div>
+    `;
+    host.prepend(panel);
+
+    q('#evRefreshWallet').onclick = refresh;
+    panel.querySelectorAll('[data-transfer-token]').forEach(btn=>{
+      btn.onclick = () => transferPrompt(btn.dataset.transferToken);
+    });
+  }
+
+  function render(data){
+    mountPanel(data);
+    q('#evTonVal').textContent = String(data.ton ?? data.TON ?? token(data,'TON').onchain ?? '0');
+    q('#evVusdtVal').textContent = value(token(data,'vUSDT'));
+    q('#evVshareVal').textContent = value(token(data,'vSHARE'));
+    q('#evUsdtTonVal').textContent = value(token(data,'USDT-TON'));
+    loadHistory(findWallet(data));
+  }
+
+  async function loadHistory(wallet){
+    const box = q('#evTxList');
+    if(!box) return;
+    if(!wallet){ box.textContent='Wallet not connected.'; return; }
+    try{
+      const r = await fetch(API_HISTORY+'?wallet='+encodeURIComponent(wallet), {cache:'no-store'});
+      const j = await r.json();
+      if(!j.ok){ box.textContent='History unavailable.'; return; }
+      box.innerHTML = (j.events||[]).slice(0,10).map(e=>{
+        const d = e.timestamp ? new Date(e.timestamp*1000).toLocaleString() : '';
+        return `<div class="ev-tx"><b>${d}</b><small>${e.event_id || e.lt || ''}</small></div>`;
+      }).join('') || 'No transactions found.';
+    }catch(e){ box.textContent='History unavailable.'; }
+  }
+
+  async function refresh(){
+    try{
+      const data = await getTokens();
+      render(data);
+    }catch(e){
+      console.error(e);
+    }
+  }
+
+  function transferPrompt(sym){
+    alert(sym + ' transfer UI is enabled. Next step: bind this button to TonConnect jetton-transfer payload after confirming token-wallet address format from /wallet/api/tokens.php.');
+  }
+
+  const css = document.createElement('style');
+  css.textContent = `
+    .ev-onchain-panel{margin:14px auto;padding:14px;border-radius:18px;background:#fff;border:1px solid #fee2e2;box-shadow:0 10px 30px rgba(230,0,18,.12);max-width:980px}
+    .ev-onchain-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .ev-onchain-head b{display:block;color:#b8000e;font-size:18px}
+    .ev-onchain-head small{display:block;color:#64748b;margin-top:2px}
+    .ev-onchain-head button,.ev-transfer-row button{border:0;border-radius:999px;background:#e60012;color:#fff;font-weight:800;padding:10px 14px;cursor:pointer}
+    .ev-token-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .ev-token{background:#fff1f2;border:1px solid #fecdd3;border-radius:14px;padding:12px}
+    .ev-token span{display:block;color:#991b1b;font-size:12px;font-weight:800}
+    .ev-token b{display:block;color:#111827;font-size:20px;margin-top:4px}
+    .ev-transfer-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .ev-history{margin-top:14px;border-top:1px solid #fee2e2;padding-top:12px}
+    .ev-history-title{font-weight:900;color:#b8000e;margin-bottom:8px}
+    .ev-tx{padding:8px 0;border-bottom:1px dashed #fecdd3}
+    .ev-tx b{display:block;font-size:12px;color:#111827}
+    .ev-tx small{display:block;color:#64748b;word-break:break-all}
+    @media(max-width:720px){.ev-token-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.ev-onchain-head{align-items:flex-start;flex-direction:column}}
+  `;
+  document.head.appendChild(css);
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', refresh);
+  else refresh();
+})();

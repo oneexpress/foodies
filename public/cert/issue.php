@@ -1,0 +1,29 @@
+<?php
+declare(strict_types=1);
+$pdo=new PDO("mysql:host=localhost;dbname=visa_db;charset=utf8mb4","oneexpressvisa",'$Express4653',[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
+
+$postId=(int)($_GET['post_id'] ?? 0);
+if($postId<=0) die('Missing post_id');
+
+$st=$pdo->prepare("SELECT * FROM visa_free_posts WHERE id=? LIMIT 1");
+$st->execute([$postId]);
+$p=$st->fetch();
+if(!$p) die('Post not found');
+
+$brand=preg_replace('/[^A-Za-z0-9]/','',substr($p['title'] ?: 'Brand',0,24));
+if(!$brand) $brand='Brand';
+
+$hash=strtoupper(substr(hash('crc32b',$postId.'|'.$brand.'|'.time()),0,4));
+$code='991-'.$brand.'-'.$hash;
+
+$pdo->prepare("
+INSERT INTO ev_vendor_certs(post_id,product_id,cert_code,brand_name)
+VALUES(?,?,?,?)
+ON DUPLICATE KEY UPDATE status='active'
+")->execute([$postId,(int)($p['marketplace_product_id'] ?? 0),$code,$brand]);
+
+header("Location: /cert/verify.php?code=".urlencode($code));
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

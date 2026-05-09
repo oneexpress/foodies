@@ -1,0 +1,19 @@
+.foodies-local-bottom-nav{
+  position:fixed!important;left:0;right:0;bottom:0;z-index:99999!important;
+  min-height:62px!important;background:#E60012!important;color:#fff!important;
+  display:flex!important;align-items:center!important;gap:8px!important;
+  padding:8px 12px!important;box-sizing:border-box!important;
+  overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;
+  box-shadow:0 -6px 18px rgba(0,0,0,.18)!important;
+}
+.foodies-local-bottom-nav a,.foodies-local-bottom-nav button,.foodies-local-bottom-nav span{
+  flex:0 0 auto!important;border:0!important;border-radius:999px!important;
+  background:#fff!important;color:#E60012!important;text-decoration:none!important;
+  font-weight:1000!important;font-size:13px!important;line-height:1!important;
+  padding:10px 12px!important;height:38px!important;display:inline-flex!important;
+  align-items:center!important;justify-content:center!important;box-sizing:border-box!important;
+}
+.foodies-local-bottom-nav .active{background:#B8000E!important;color:#fff!important}
+.foodies-local-bottom-nav .login-ok{background:#ecfff3!important;color:#027a48!important}
+.foodies-local-bottom-nav .login-bad{background:#fff1f2!important;color:#b42318!important}
+body{padding-bottom:88px!important}

@@ -1,0 +1,19 @@
+{
+  "name": "991-ton",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "blueprint build",
+    "deploy:vusdt": "blueprint run deploy-vusdt --mainnet",
+    "deploy:vshare": "blueprint run deploy-vshare --mainnet"
+  },
+  "dependencies": {
+    "@ton/blueprint": "latest",
+    "@ton/core": "latest",
+    "@ton/crypto": "latest",
+    "@ton/ton": "latest",
+    "dotenv": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

@@ -1,0 +1,50 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=utf-8');
+
+require_once __DIR__ . '/../../inc/rewards-engine.php';
+
+$wallet = trim((string)($_POST['wallet'] ?? $_GET['wallet'] ?? ev_active_wallet()));
+$amount = (float)($_POST['amount'] ?? $_GET['amount'] ?? 0);
+$txid   = trim((string)($_POST['txid'] ?? $_GET['txid'] ?? ''));
+
+if ($wallet === '' || $amount <= 0) {
+    echo json_encode(['ok'=>false,'error'=>'INVALID_INPUT']); exit;
+}
+
+/*
+GLOBAL LOCK — FOODIES REWARDS ENGINE BOOST
+1 vUSDT = +0.003 multiplier
+Formula: boost = min(30, 1 + (vUSDT * 0.003))
+*/
+
+$coefficient = 0.003;
+$cap = 30.0000;
+$multiplier = min($cap, 1 + ($amount * $coefficient));
+
+$ok = ev_rewards_add_boost(
+    $wallet,
+    'linear_vusdt_boost',
+    $multiplier,
+    $txid ?: ('VUSDT-' . date('YmdHis')),
+    24,
+    [
+        'engine'=>'Foodies Rewards Engine',
+        'rule'=>'1 vUSDT = +0.003 multiplier',
+        'amount_vusdt'=>$amount,
+        'cap'=>'30x'
+    ]
+);
+
+echo json_encode([
+    'ok'=>$ok,
+    'engine'=>'Foodies Rewards Engine',
+    'wallet'=>$wallet,
+    'amount_vusdt'=>number_format($amount,4,'.',''),
+    'coefficient'=>'0.003',
+    'multiplier'=>number_format($multiplier,4,'.',''),
+    'cap'=>'30.0000',
+    'duration'=>'24h',
+    'vShare'=>ev_vshare_balance($wallet)
+], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+

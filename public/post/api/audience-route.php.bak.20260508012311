@@ -1,0 +1,95 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=UTF-8');
+
+function out(array $a): void {
+  echo json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+  exit;
+}
+
+$target   = $_GET['target'] ?? 'china';
+$audience = $_GET['audience'] ?? '';
+$category = $_GET['category'] ?? '';
+
+$audienceMap = [
+  'china' => [
+    'community' => '/china/community/',
+    'community_tag' => 'audience-china',
+    'label_zh' => '中国目标人群',
+    'label_en' => 'China Audience',
+  ],
+  'malaysia' => [
+    'community' => $target === 'china' ? '/china/community/' : '/community/',
+    'community_tag' => 'audience-malaysia',
+    'label_zh' => '马来西亚本地目标人群',
+    'label_en' => 'Malaysia Local Audience',
+  ],
+  'indonesia' => ['community'=>'/community/','community_tag'=>'nat-indonesia','label_zh'=>'印尼目标人群','label_en'=>'Indonesia Audience'],
+  'bangladesh'=> ['community'=>'/community/','community_tag'=>'nat-bangladesh','label_zh'=>'孟加拉目标人群','label_en'=>'Bangladesh Audience'],
+  'nepal'     => ['community'=>'/community/','community_tag'=>'nat-nepal','label_zh'=>'尼泊尔目标人群','label_en'=>'Nepal Audience'],
+  'myanmar'   => ['community'=>'/community/','community_tag'=>'nat-myanmar','label_zh'=>'缅甸目标人群','label_en'=>'Myanmar Audience'],
+  'vietnam'   => ['community'=>'/community/','community_tag'=>'nat-vietnam','label_zh'=>'越南目标人群','label_en'=>'Vietnam Audience'],
+  'india'     => ['community'=>'/community/','community_tag'=>'nat-india','label_zh'=>'印度目标人群','label_en'=>'India Audience'],
+  'philippines'=>['community'=>'/community/','community_tag'=>'nat-philippines','label_zh'=>'菲律宾目标人群','label_en'=>'Philippines Audience'],
+  'cambodia'  => ['community'=>'/community/','community_tag'=>'nat-cambodia','label_zh'=>'柬埔寨目标人群','label_en'=>'Cambodia Audience'],
+  'pakistan'  => ['community'=>'/community/','community_tag'=>'nat-pakistan','label_zh'=>'巴基斯坦目标人群','label_en'=>'Pakistan Audience'],
+  'thailand'  => ['community'=>'/community/','community_tag'=>'nat-thailand','label_zh'=>'泰国目标人群','label_en'=>'Thailand Audience'],
+];
+
+$categoryMap = [
+  'svc-visa-permit' => [
+    'marketplace_category' => 'VISA & PERMIT',
+    'community_tag' => 'svc-visa-permit',
+  ],
+  'svc-marketplace' => [
+    'marketplace_category' => 'FoodTruck Marketplace',
+    'community_tag' => 'svc-marketplace',
+  ],
+  'svc-jobs-posting' => [
+    'marketplace_category' => 'Jobs Posting',
+    'community_tag' => 'svc-jobs-posting',
+  ],
+  'svc-transport' => [
+    'marketplace_category' => 'Luxury MPV Rental',
+    'community_tag' => 'svc-transport',
+  ],
+  'svc-accommodation' => [
+    'marketplace_category' => 'Premium Homestay',
+    'community_tag' => 'svc-accommodation',
+  ],
+  'svc-agency-helpdesk' => [
+    'marketplace_category' => 'Agency Helpdesk',
+    'community_tag' => 'svc-agency-helpdesk',
+  ],
+];
+
+$a = $audienceMap[$audience] ?? [
+  'community' => $target === 'china' ? '/china/community/' : '/community/',
+  'community_tag' => 'audience-general',
+  'label_zh' => '一般目标人群',
+  'label_en' => 'General Audience',
+];
+
+$c = $categoryMap[$category] ?? [
+  'marketplace_category' => 'General',
+  'community_tag' => 'general',
+];
+
+out([
+  'ok' => true,
+  'route' => [
+    'audience_slug' => $audience,
+    'category_slug' => $category,
+    'target' => $target,
+    'community_url' => $a['community'],
+    'audience_tag' => $a['community_tag'],
+    'category_tag' => $c['community_tag'],
+    'marketplace_category' => $c['marketplace_category'],
+    'label_zh' => $a['label_zh'],
+    'label_en' => $a['label_en'],
+  ]
+]);
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

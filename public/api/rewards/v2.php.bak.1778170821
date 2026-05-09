@@ -1,0 +1,91 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../../inc/ev991-db.php';
+
+try {
+    if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+    $wallet = trim((string)($_SESSION['ton_wallet'] ?? $_SESSION['wallet'] ?? $_GET['wallet'] ?? ''));
+
+    $pdo = ev991_pdo();
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS foodies_reward_pool (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            source_type VARCHAR(50) NOT NULL,
+            source_uid VARCHAR(120) NULL,
+            gross_amount DECIMAL(20,8) NOT NULL DEFAULT 0,
+            inject_rate DECIMAL(10,6) NOT NULL DEFAULT 0.150000,
+            injected_vshare DECIMAL(20,8) NOT NULL DEFAULT 0,
+            meta_json LONGTEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY source_type (source_type),
+            KEY created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
+    $weight = 0;
+    $tiers = [
+        '1' => ['count'=>0,'weight'=>1],
+        '2' => ['count'=>0,'weight'=>3],
+        '3' => ['count'=>0,'weight'=>5],
+    ];
+
+    if ($wallet !== '') {
+        $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+        $table = null;
+        foreach (['foodies_nfts','foodies_nft','visa_foodies_nfts','foodies_redeems'] as $t) {
+            if (in_array($t, $tables, true)) { $table = $t; break; }
+        }
+
+        if ($table) {
+            $cols = $pdo->query("SHOW COLUMNS FROM `$table`")->fetchAll(PDO::FETCH_COLUMN);
+            $walletCol = in_array('wallet', $cols, true) ? 'wallet' : (in_array('ton_wallet', $cols, true) ? 'ton_wallet' : null);
+            $tierCol = in_array('tier', $cols, true) ? 'tier' : (in_array('tier_id', $cols, true) ? 'tier_id' : null);
+            $statusCol = in_array('status', $cols, true) ? 'status' : null;
+
+            if ($walletCol && $tierCol) {
+                $where = "`$walletCol` = ?";
+                $params = [$wallet];
+                if ($statusCol) $where .= " AND `$statusCol` IN ('approved','minted')";
+                $st = $pdo->prepare("SELECT `$tierCol` tier, COUNT(*) c FROM `$table` WHERE $where GROUP BY `$tierCol`");
+                $st->execute($params);
+                foreach ($st->fetchAll() as $r) {
+                    $tier = (string)(int)$r['tier'];
+                    if (!isset($tiers[$tier])) continue;
+                    $tiers[$tier]['count'] = (int)$r['c'];
+                    $weight += $tiers[$tier]['count'] * $tiers[$tier]['weight'];
+                }
+            }
+        }
+    }
+
+    $pool = (float)$pdo->query("SELECT COALESCE(SUM(injected_vshare),0) FROM foodies_reward_pool")->fetchColumn();
+
+    $base = 0.003;
+    $dailyCap = 10.0;
+    $vusdt = max(0.0, (float)($_GET['vusdt'] ?? 0));
+    $boost = $vusdt * 0.003;
+    $nftFactor = $weight * 0.01;
+    $rewardPerCycle = ($base + $boost) * (1 + $nftFactor);
+
+    echo json_encode([
+        'ok' => true,
+        'version' => 'Reward Engine v2',
+        'wallet' => $wallet,
+        'base_reward' => $base,
+        'vusdt_boost' => $boost,
+        'boost_rule' => '1 vUSDT = +0.003 speed multiplier',
+        'nft_weight' => $weight,
+        'nft_factor' => $nftFactor,
+        'reward_per_cycle_preview' => round($rewardPerCycle, 8),
+        'daily_cap' => $dailyCap,
+        'reward_pool_vshare' => round($pool, 8),
+        'tiers' => $tiers,
+        'terminology' => ['digging'=>'Digging','reward'=>'Reward'],
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['ok'=>false,'error'=>$e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+}
+

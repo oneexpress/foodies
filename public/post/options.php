@@ -1,0 +1,75 @@
+<?php
+declare(strict_types=1);
+header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store');
+
+function flarum_cfg(string $target): array {
+    $file = $target === 'china'
+        ? '/var/www/html/visa/china-community/config.php'
+        : '/var/www/html/visa/foreign-community/config.php';
+
+    if (!is_file($file)) return [];
+    $cfg = include $file;
+    return is_array($cfg) ? $cfg : [];
+}
+
+function pdo_from_cfg(array $cfg): ?PDO {
+    if (empty($cfg['database'])) return null;
+    $d = $cfg['database'];
+    return new PDO(
+        'mysql:host='.($d['host'] ?? 'localhost').';dbname='.$d['database'].';charset=utf8mb4',
+        $d['username'],
+        $d['password'],
+        [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]
+    );
+}
+
+function rows(PDO $pdo, string $prefix, string $where): array {
+    $sql = "SELECT name, slug, description, position FROM `{$prefix}tags` WHERE {$where} AND is_hidden=0 ORDER BY COALESCE(position,9999), name";
+    return $pdo->query($sql)->fetchAll();
+}
+
+function norm(array $r): array {
+    return [
+        'name' => (string)$r['name'],
+        'slug' => (string)$r['slug'],
+    ];
+}
+
+$out = [];
+foreach (['china','foreign'] as $target) {
+    try {
+        $cfg = flarum_cfg($target);
+        $pdo = pdo_from_cfg($cfg);
+        $prefix = $cfg['database']['prefix'] ?? 'flarum_';
+
+        $nat = $target === 'foreign'
+            ? rows($pdo, $prefix, "slug LIKE 'nat-%'")
+            : [['name'=>'China Community','slug'=>'nat-china']];
+
+        $cat = rows($pdo, $prefix, "slug LIKE 'svc-%' OR slug IN ('car-rental','premium-homestay','loan-finance')");
+        $loc = rows($pdo, $prefix, "slug LIKE 'loc-%'");
+        $area = rows($pdo, $prefix, "slug LIKE 'area-%'");
+
+        $out[$target] = [
+            'nationalities' => array_map('norm', $nat),
+            'categories' => array_map('norm', $cat),
+            'locations' => array_map('norm', $loc),
+            'sub_locations' => array_map('norm', $area),
+        ];
+    } catch (Throwable $e) {
+        $out[$target] = [
+            'nationalities'=>[],
+            'categories'=>[],
+            'locations'=>[],
+            'sub_locations'=>[],
+            'error'=>$e->getMessage()
+        ];
+    }
+}
+
+echo json_encode(['ok'=>true,'targets'=>$out], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

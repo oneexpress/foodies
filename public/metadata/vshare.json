@@ -1,0 +1,10 @@
+{
+  "name": "ONE vSHARE",
+  "symbol": "vSHARE",
+  "description": "ONE Rewards Participation Token",
+  "image": "https://expressvisa.one/metadata/991_vshare_logo.png",
+  "decimals": 9,
+  "social": {
+    "website": "https://expressvisa.one"
+  }
+}

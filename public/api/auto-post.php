@@ -1,0 +1,29 @@
+<?php
+require_once __DIR__.'/../inc/visa-vusdt.php';
+$pdo = visa_pdo();
+
+$q = $pdo->query("SELECT * FROM visa_bookings WHERE auto_posted=0 LIMIT 10");
+$rows = $q->fetchAll();
+
+foreach ($rows as $r) {
+    $title = $r['service_type']." - ".$r['booking_ref'];
+    $content = "Service: ".$r['service_type']."\n".
+               "Location: ".$r['location']."\n".
+               "Price: ".$r['service_fee_vusdt']." vUSDT\n".
+               "Pay: https://expressvisa.one/pay/?ref=".$r['booking_ref'];
+
+    // SIMPLE INSERT TO FLARUM (china community)
+    $db = new PDO("mysql:host=localhost;dbname=flarum_db;charset=utf8mb4","root","");
+    $db->exec("INSERT INTO fl_discussions (title,created_at) VALUES ('".addslashes($title)."',NOW())");
+    $did = $db->lastInsertId();
+
+    $db->exec("INSERT INTO fl_posts (discussion_id,type,content,created_at) VALUES ($did,'comment','".addslashes($content)."',NOW())");
+
+    // mark posted
+    $pdo->prepare("UPDATE visa_bookings SET auto_posted=1 WHERE id=?")->execute([$r['id']]);
+}
+echo "OK";
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

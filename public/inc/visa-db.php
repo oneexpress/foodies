@@ -1,0 +1,140 @@
+<?php
+declare(strict_types=1);
+
+function visa_pdo(): PDO {
+    static $pdo = null;
+    if ($pdo instanceof PDO) return $pdo;
+    $pdo = new PDO(
+        'mysql:host=localhost;dbname=visa_ops_db;charset=utf8mb4',
+        'oneexpressvisa',
+        '$Express4653',
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
+    return $pdo;
+}
+
+function flarum_pdo(): PDO {
+    static $pdo = null;
+    if ($pdo instanceof PDO) return $pdo;
+    $pdo = new PDO(
+        'mysql:host=localhost;dbname=foreign_flarum_db;charset=utf8mb4',
+        'oneexpressvisa',
+        '$Express4653',
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
+    return $pdo;
+}
+
+function h($v): string {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+}
+
+function wa_clean(string $n): string {
+    $n = preg_replace('/\D+/', '', $n);
+    if (str_starts_with($n, '0')) $n = '6' . $n;
+    return $n;
+}
+
+function wa_link(string $phone, string $text): string {
+    $n = wa_clean($phone);
+    return $n ? ('https://wa.me/' . $n . '?text=' . rawurlencode($text)) : '#';
+}
+
+function booking_status_label(string $s): string {
+    return ucwords(str_replace('_', ' ', $s));
+}
+
+function sync_booking_to_foreign_community(string $bookingRef): array {
+    $v = visa_pdo();
+    $f = flarum_pdo();
+
+    $stmt = $v->prepare("SELECT * FROM visa_bookings WHERE booking_ref=? LIMIT 1");
+    $stmt->execute([$bookingRef]);
+    $b = $stmt->fetch();
+
+    if (!$b) return ['ok'=>false, 'message'=>'Booking not found'];
+    if ((int)($b['community_synced'] ?? 0) === 1 && !empty($b['community_discussion_id'])) {
+        return ['ok'=>true, 'message'=>'Already synced', 'discussion_id'=>$b['community_discussion_id']];
+    }
+
+    $userId = 1;
+    $u = $f->query("SELECT id FROM flarum_users ORDER BY id ASC LIMIT 1")->fetch();
+    if ($u && isset($u['id'])) $userId = (int)$u['id'];
+
+    $tagSlug = 'svc-visa-permit';
+    $svc = strtolower((string)$b['service_type']);
+    if (str_contains($svc, 'marketplace')) $tagSlug = 'svc-marketplace';
+    elseif (str_contains($svc, 'job')) $tagSlug = 'svc-jobs-posting';
+    elseif (str_contains($svc, 'mpv') || str_contains($svc, 'transport')) $tagSlug = 'svc-transport';
+    elseif (str_contains($svc, 'homestay') || str_contains($svc, 'accommodation')) $tagSlug = 'svc-accommodation';
+    elseif (str_contains($svc, 'loan') || str_contains($svc, 'agent')) $tagSlug = 'svc-agency-helpdesk';
+
+    $tag = $f->prepare("SELECT id FROM flarum_tags WHERE slug=? LIMIT 1");
+    $tag->execute([$tagSlug]);
+    $tagId = (int)($tag->fetch()['id'] ?? 0);
+
+    $title = '[Booking] ' . $b['service_type'] . ' · ' . $b['booking_ref'];
+    $content = "### ExpressVisa Booking Request\n\n"
+        . "**Reference:** {$b['booking_ref']}\n\n"
+        . "**Service:** {$b['service_type']}\n\n"
+        . "**Status:** " . booking_status_label((string)$b['status']) . "\n\n"
+        . "**Agent:** {$b['agent_name']}\n\n"
+        . "**Nationality:** {$b['nationality']}\n\n"
+        . "**Passport No.:** {$b['passport_no']}\n\n"
+        . "**Passport Expiry:** {$b['passport_expiry']}\n\n"
+        . "**Preferred Appointment:** {$b['preferred_date']} {$b['preferred_time']}\n\n"
+        . "**WhatsApp:** {$b['whatsapp']}\n\n"
+        . "> This request was created from ExpressVisa Appointment Center.";
+
+    $now = gmdate('Y-m-d H:i:s');
+
+    $f->beginTransaction();
+    try {
+        $f->prepare("INSERT INTO flarum_discussions
+          (title, comment_count, participant_count, post_number_index, created_at, user_id, first_post_id, last_posted_at, last_posted_user_id, last_post_id, last_post_number)
+          VALUES (?, 1, 1, 1, ?, ?, NULL, ?, ?, NULL, 1)")
+          ->execute([$title, $now, $userId, $now, $userId]);
+
+        $discussionId = (int)$f->lastInsertId();
+
+        $f->prepare("INSERT INTO flarum_posts
+          (discussion_id, number, created_at, user_id, type, content)
+          VALUES (?, 1, ?, ?, 'comment', ?)")
+          ->execute([$discussionId, $now, $userId, $content]);
+
+        $postId = (int)$f->lastInsertId();
+
+        $f->prepare("UPDATE flarum_discussions SET first_post_id=?, last_post_id=? WHERE id=?")
+          ->execute([$postId, $postId, $discussionId]);
+
+        if ($tagId > 0) {
+            $f->prepare("INSERT IGNORE INTO flarum_discussion_tag (discussion_id, tag_id) VALUES (?, ?)")
+              ->execute([$discussionId, $tagId]);
+        }
+
+        $f->commit();
+
+        $v->prepare("UPDATE visa_bookings SET community_synced=1, community_discussion_id=?, community_post_id=? WHERE booking_ref=?")
+          ->execute([$discussionId, $postId, $bookingRef]);
+
+        $v->prepare("INSERT INTO visa_booking_sync_log (booking_ref,target,status,message) VALUES (?, 'foreign_community', 'ok', ?)")
+          ->execute([$bookingRef, 'Synced to discussion #' . $discussionId]);
+
+        return ['ok'=>true, 'message'=>'Synced', 'discussion_id'=>$discussionId, 'post_id'=>$postId];
+    } catch (Throwable $e) {
+        $f->rollBack();
+        $v->prepare("INSERT INTO visa_booking_sync_log (booking_ref,target,status,message) VALUES (?, 'foreign_community', 'error', ?)")
+          ->execute([$bookingRef, $e->getMessage()]);
+        return ['ok'=>false, 'message'=>$e->getMessage()];
+    }
+}
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

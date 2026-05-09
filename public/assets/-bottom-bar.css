@@ -1,0 +1,32 @@
+@import url('/assets/css/991-bottom-nav.css');
+
+/* 991 bottom nav hard override for /post/index.php */
+.ev991-bottom-nav select,
+.ev991-bottom-nav a,
+.ev991-bottom-nav button{
+  width:auto!important;
+  max-width:none!important;
+  min-width:auto!important;
+}
+.ev991-bottom-nav #ev991Lang{
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  flex:0 0 48px!important;
+  padding:0 8px!important;
+}
+
+/* post/index hard override */
+.ev991-bottom-nav select,
+.ev991-bottom-nav a,
+.ev991-bottom-nav button{
+  width:auto!important;
+  max-width:none!important;
+  min-width:auto!important;
+}
+.ev991-bottom-nav #ev991Lang{
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  flex:0 0 48px!important;
+}

@@ -1,0 +1,16 @@
+.ev-boost-badge,
+.product-thumb .ev-boost-badge,
+.product-layout .ev-boost-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#e60012;
+  color:#fff;
+  font-weight:900;
+  font-size:12px;
+  border-radius:999px;
+  padding:5px 9px;
+  box-shadow:0 8px 22px rgba(230,0,18,.28);
+  margin:6px 0;
+}
+.ev-boost-badge::before{content:"🔥";}

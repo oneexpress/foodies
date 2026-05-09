@@ -1,0 +1,120 @@
+/* 991 community topbar final refine */
+.App-header,
+.Header{
+  background:#fff!important;
+  border-bottom:1px solid #e60012!important;
+  min-height:86px!important;
+  height:auto!important;
+  overflow:visible!important;
+}
+
+.App-header .container,
+.Header .container{
+  max-width:1180px!important;
+  min-height:86px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:18px!important;
+  padding:12px 18px!important;
+}
+
+.Header-title{
+  flex:0 0 auto!important;
+  margin-right:auto!important;
+}
+
+.Header-logo{
+  max-height:62px!important;
+  width:auto!important;
+}
+
+.Header-primary{
+  flex:0 0 auto!important;
+  display:flex!important;
+  align-items:center!important;
+  float:none!important;
+}
+
+.Header-secondary{
+  flex:0 0 auto!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  margin-left:18px!important;
+  float:none!important;
+}
+
+.Header-controls{
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.Header-controls>li{
+  display:flex!important;
+  align-items:center!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.Search{
+  width:360px!important;
+  flex:0 0 360px!important;
+  margin:0 8px 0 0!important;
+}
+
+.Search-input{
+  width:100%!important;
+  height:44px!important;
+  border:none!important;
+  border-radius:16px!important;
+  background:#f1f5f9!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+
+.Search-input input{
+  height:44px!important;
+  width:100%!important;
+  border:0!important;
+  background:#f1f5f9!important;
+  color:#334155!important;
+  padding:0 44px!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+}
+
+.Search-input input:focus{
+  background:#fff!important;
+  outline:2px solid rgba(230,0,18,.18)!important;
+}
+
+.Header .Button,
+.Header a,
+.Header button{
+  white-space:nowrap!important;
+}
+
+@media(max-width:900px){
+  .App-header .container,
+  .Header .container{
+    flex-wrap:wrap!important;
+    justify-content:center!important;
+  }
+
+  .Header-title{
+    margin-right:0!important;
+  }
+
+  .Header-secondary{
+    margin-left:0!important;
+  }
+
+  .Search{
+    width:min(100%,420px)!important;
+    flex:1 1 100%!important;
+    order:5!important;
+  }
+}

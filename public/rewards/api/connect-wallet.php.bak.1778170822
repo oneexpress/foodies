@@ -1,0 +1,72 @@
+<?php
+declare(strict_types=1);
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+
+$raw = json_decode(file_get_contents('php://input') ?: '{}', true);
+$address = trim((string)($raw['address'] ?? ''));
+
+if ($address === '' || strlen($address) < 20) {
+    http_response_code(400);
+    echo json_encode(['ok'=>false,'error'=>'INVALID_WALLET']);
+    exit;
+}
+
+$_SESSION['ev_ton_address'] = $address;
+$_SESSION['ton_wallet'] = $address;
+$_SESSION['wallet_address'] = $address;
+
+setcookie('ev_ton_wallet', $address, [
+    'expires' => time() + 86400 * 30,
+    'path' => '/',
+    'secure' => true,
+    'httponly' => false,
+    'samesite' => 'Lax',
+]);
+
+try {
+    $pdo = new PDO(
+        'mysql:host=localhost;dbname=visa_db;charset=utf8mb4',
+        'oneexpressvisa',
+        '$Express4653',
+        [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]
+    );
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS visa_unified_accounts (
+      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(128) NULL,
+      email VARCHAR(190) NULL,
+      ton_address VARCHAR(128) NULL,
+      password_hash VARCHAR(255) NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_ton_address(ton_address)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $stmt = $pdo->prepare("SELECT id, username FROM visa_unified_accounts WHERE ton_address=? LIMIT 1");
+    $stmt->execute([$address]);
+    $u = $stmt->fetch();
+
+    if (!$u) {
+        $username = 'ton_' . substr(hash('sha256', $address), 0, 10);
+        $stmt = $pdo->prepare("INSERT INTO visa_unified_accounts(username, ton_address) VALUES(?, ?)");
+        $stmt->execute([$username, $address]);
+        $uid = (int)$pdo->lastInsertId();
+    } else {
+        $uid = (int)$u['id'];
+        $username = (string)($u['username'] ?? '');
+    }
+
+    $_SESSION['ev_account_id'] = $uid;
+    $_SESSION['ev_username'] = $username;
+} catch (Throwable $e) {
+    // Wallet session still works even if account table differs.
+}
+
+echo json_encode([
+    'ok'=>true,
+    'wallet'=>$address,
+    'account_id'=>$_SESSION['ev_account_id'] ?? 0
+], JSON_UNESCAPED_SLASHES);
+

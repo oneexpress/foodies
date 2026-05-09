@@ -1,0 +1,7 @@
+Phase 8 adds:
+- scripts/audit-jetton.ts
+- scripts/build-vusdt.ts
+- scripts/build-vshare.ts
+
+This phase does not deploy.
+It blocks placeholder contracts and requires real Jetton master/wallet code.

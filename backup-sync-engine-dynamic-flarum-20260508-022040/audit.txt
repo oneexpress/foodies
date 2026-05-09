@@ -1,0 +1,9 @@
+991 Sync Engine
+mode=audit
+write=NO
+
+[Detected Flarum DBs]
+
+CHINA_DB=
+FOREIGN_DBS=
+ERROR: China Flarum DB not detected.

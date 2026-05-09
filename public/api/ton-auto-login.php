@@ -1,0 +1,20 @@
+<?php
+declare(strict_types=1);
+session_start();
+header('Content-Type: application/json; charset=UTF-8');
+$raw=file_get_contents('php://input');
+$j=json_decode($raw ?: '{}', true);
+$addr=trim((string)($j['address'] ?? $j['ton_address'] ?? ''));
+if ($addr==='') {
+  http_response_code(400);
+  echo json_encode(['ok'=>false,'error'=>'missing_address']);
+  exit;
+}
+$_SESSION['ev_ton_address']=$addr;
+$_SESSION['ev_username']='TON '.substr($addr,0,6).'...'.substr($addr,-4);
+setcookie('ev_ton_address',$addr,time()+86400*30,'/');
+echo json_encode(['ok'=>true,'ton_address'=>$addr]);
+
+
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>

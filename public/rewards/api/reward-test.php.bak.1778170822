@@ -1,0 +1,21 @@
+<?php
+require_once __DIR__.'/../../inc/rewards-engine.php';
+
+header('Content-Type: application/json');
+
+$wallet = $_GET['wallet'] ?? '';
+$amount = floatval($_GET['amount'] ?? 5);
+
+if (!$wallet) {
+    echo json_encode(['ok'=>false,'error'=>'wallet required']); exit;
+}
+
+$pdo = ev_pdo();
+ev_vshare_credit($pdo, $wallet, $amount, 'manual_test');
+
+echo json_encode([
+  'ok'=>true,
+  'wallet'=>$wallet,
+  'amount'=>$amount
+]);
+

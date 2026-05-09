@@ -1,0 +1,10 @@
+html,body{min-height:100%;overflow-y:auto!important}
+body{padding-bottom:150px!important}
+.ev991-wallet,.wallet-page,main,#app,.page,.container{padding-bottom:130px!important}
+#ev991WalletPower,#foodiesNftWeightCard,.ev991-power,.ev991-nft-weight-card{margin-bottom:120px!important}
+.ev991-bottom-bar,.adg-bottom-nav,#adg-bottom-nav,.bottom-nav,.bottom-bar{z-index:99999!important}
+@media(max-width:768px){
+  body{padding-bottom:170px!important}
+  .ev991-wallet,.wallet-page,main,#app,.page,.container{padding-bottom:155px!important}
+  #ev991WalletPower,#foodiesNftWeightCard,.ev991-power,.ev991-nft-weight-card{margin-bottom:145px!important}
+}

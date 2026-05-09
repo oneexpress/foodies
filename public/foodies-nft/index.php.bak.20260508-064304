@@ -1,0 +1,59 @@
+<?php
+declare(strict_types=1);
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Foodies NFT Redeem</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="/foodies-nft/assets/foodies-nft.css?v=1">
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eyebrow" data-en="Foodies Rewards Engine" data-zh="美食奖励引擎">Foodies Rewards Engine</div>
+      <h1 data-en="Foodies NFT Redeem" data-zh="美食 NFT 兑换">Foodies NFT Redeem</h1>
+      <p data-en="Burn vSHARE + qualify by score to redeem Foodies NFT tiers." data-zh="消耗 vSHARE，并通过积分资格兑换美食 NFT 等级。">Burn vSHARE + qualify by score to redeem Foodies NFT tiers.</p>
+    </div>
+    <div class="hero-actions">
+      <button id="langBtn" type="button">中文</button>
+      <a href="/rewards/" data-en="Rewards" data-zh="奖励">Rewards</a>
+      <a href="/wallet/" data-en="Wallet" data-zh="钱包">Wallet</a>
+    </div>
+  </section>
+
+  <section class="balance-grid">
+    <article class="glass">
+      <span data-en="vSHARE Balance" data-zh="vSHARE 余额">vSHARE Balance</span>
+      <strong id="balVshare">0.000000</strong>
+    </article>
+    <article class="glass">
+      <span data-en="Score" data-zh="积分">Score</span>
+      <strong id="balScore">0.000000</strong>
+    </article>
+    <article class="glass">
+      <span data-en="NFT Weight" data-zh="NFT 权重">NFT Weight</span>
+      <strong id="totalWeight">0</strong>
+    </article>
+  </section>
+
+  <section class="tier-grid" id="tierGrid"></section>
+
+  <section class="glass history">
+    <div class="head">
+      <h2 data-en="Redeem Records" data-zh="兑换记录">Redeem Records</h2>
+      <span id="statusMsg" data-en="Ready" data-zh="准备就绪">Ready</span>
+    </div>
+    <div id="records">Loading...</div>
+  </section>
+</main>
+
+<script src="/foodies-nft/assets/foodies-nft.js?v=1"></script>
+<script src="/assets/js/991-wallet-sync.js?v=991-unified"></script>
+<script src="/assets/991-balance-sync.js?v=991-balance-sync-ux-v1" defer></script>
+<link rel="stylesheet" href="/assets/css/991-bottom-nav.css?v=991-latest-full-20260507162825">
+<script src="/assets/js/991-bottom-nav.js?v=991-latest-full-20260507162825" defer></script>
+</body>
+</html>
