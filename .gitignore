@@ -1,78 +1,64 @@
-# =========================
-# ENV / SECRET
-# =========================
+# env / secrets
 .env
 .env.*
-*.pem
-*.key
-*.csr
-*.p12
-*.ovpn
-*.crt
+*.env
+*.env.*
+*db-lock.env
+991-community-db-lock.env
+backup-env-*.env
 
-# =========================
-# WALLET / TON SECRET
-# =========================
-mnemonic.txt
-seed.txt
-wallet.txt
-*.seed
-*.mnemonic
-
-# =========================
-# NODE / COMPOSER
-# =========================
-node_modules/
-vendor/
-composer.lock
-package-lock.json
-
-# =========================
-# CACHE / STORAGE / LOG
-# =========================
-storage/
-cache/
-logs/
-tmp/
-sessions/
-system/storage/
-*.log
-
-# =========================
-# BACKUP / DUMP
-# =========================
+# backups
+backup-*/
+backup-*
+*-backup*
 *.bak
 *.backup
 *.old
+*.orig
 *.save
 *.tmp
+
+# db dumps
 *.sql
-*.sqlite
-*.gz
+*.sql.gz
+
+# archives
 *.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
 
-# =========================
-# OS
-# =========================
-.DS_Store
-Thumbs.db
+# logs
+*.log
+logs/
+var/log/
+storage/logs/
 
-# =========================
-# RWA / NFT TEMP
-# =========================
-public/rwa/cert/tmp/
-public/foodies-nft/tmp/
-public/metadata/foodies/tmp/
+# dependencies
+node_modules/
+vendor/
 
-# =========================
-# OPENCART SENSITIVE
-# =========================
-public/marketplace/config.php
-public/marketplace/admin/config.php
+# runtime/cache/upload/session
+storage/cache/
+storage/session/
+storage/upload/
+system/storage/cache/
+system/storage/session/
+system/storage/upload/
+marketplace/system/storage/cache/
+marketplace/system/storage/session/
+marketplace/system/storage/upload/
 
-# =========================
-# DO NOT PUSH PRIVATE BACKUPS
-# =========================
-backup/
-backups/
-restore/
+# keys / certs / wallets
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*private*
+*secret*
+*seed*
+*mnemonic*
+*wallet*

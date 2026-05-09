@@ -1,6 +1,0 @@
-<?php
-declare(strict_types=1);
-header('Content-Type: application/json; charset=utf-8');
-$file = '/var/www/html/visa/public/assets/data/-unified-taxonomy.json';
-echo file_get_contents($file);
-

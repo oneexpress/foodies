@@ -1,8 +1,0 @@
-<?php
-declare(strict_types=1);
-require_once __DIR__ . '/env.php';
-
-function ev_ton_env(string $key, string $default=''): string {
-    return ev_env($key, $default);
-}
-
