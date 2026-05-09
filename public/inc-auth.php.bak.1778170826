@@ -1,0 +1,15 @@
+<?php
+declare(strict_types=1);
+session_start();
+
+function ev_is_logged_in(): bool {
+  return !empty($_SESSION['ev_account_id']) || !empty($_SESSION['ev_username']);
+}
+
+function ev_require_login(string $redirect='/post/'): void {
+  if (!ev_is_logged_in()) {
+    
+    exit;
+  }
+}
+

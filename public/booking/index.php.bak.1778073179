@@ -1,0 +1,158 @@
+<?php
+declare(strict_types=1);
+header("Content-Type: text/html; charset=UTF-8");
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ExpressVisa Appointment Center</title>
+<style>
+:root{--red:#e60023;--red2:#ff5a00;--dark:#111827;--muted:#667085;--line:#e5e7eb;--soft:#fff1f2;--gold:#ffd36a}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Microsoft YaHei",sans-serif;background:radial-gradient(circle at top left,rgba(230,0,35,.16),transparent 34%),linear-gradient(180deg,#fff7f7,#f3f4f6);color:var(--dark);padding-bottom:118px}
+.wrap{max-width:1220px;margin:auto;padding:24px 16px 48px}
+.hero{display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;background:linear-gradient(135deg,var(--red),var(--red2));border-radius:34px;padding:30px;color:#fff;box-shadow:0 28px 78px rgba(230,0,35,.26)}
+.logoBox{background:#fff;border-radius:28px;padding:16px;box-shadow:0 18px 44px rgba(0,0,0,.18)}
+.logoBox img{width:100%;display:block}
+.hero h1{margin:0;font-size:42px;line-height:1.03;font-weight:1000;letter-spacing:-.04em}
+.hero p{margin:10px 0 0;font-size:17px;font-weight:850;opacity:.96}
+.heroBadges{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:9px 12px;font-size:13px;font-weight:1000}
+.shell{margin-top:20px;display:grid;grid-template-columns:minmax(0,1.2fr) 360px;gap:18px;align-items:start}
+.panel{background:#fff;border:1px solid rgba(230,0,35,.12);border-radius:30px;padding:24px;box-shadow:0 26px 72px rgba(15,23,42,.10)}
+.notice{display:flex;gap:12px;background:var(--soft);border:1px solid rgba(230,0,35,.18);border-radius:20px;padding:16px;margin-bottom:18px;color:#9b1020;font-weight:900;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+label{display:block;font-weight:1000;margin:0 0 7px;color:#1f2937}
+.field{width:100%;height:56px;border:1px solid #d7dbe2;border-radius:18px;padding:0 16px;font-size:15px;background:#fff;outline:none}
+.field:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(230,0,35,.10)}
+textarea.field{height:106px;padding-top:15px;resize:vertical}
+.full{grid-column:1/-1}
+.optional{font-size:12px;color:var(--muted);font-weight:800}
+.fileBox{border:1px dashed #d7dbe2;border-radius:18px;padding:16px;background:#fcfcfd}
+.fileBox input{font-size:14px}
+.actions{margin-top:18px;display:grid;grid-template-columns:1fr 210px;gap:12px}
+.submit,.back{height:60px;border-radius:999px;font-weight:1000;font-size:16px;display:flex;align-items:center;justify-content:center}
+.submit{border:0;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;cursor:pointer;box-shadow:0 18px 38px rgba(230,0,35,.25)}
+.back{border:1px solid rgba(230,0,35,.18);background:#fff;color:#b8001c;text-decoration:none}
+.side{position:sticky;top:16px;display:grid;gap:14px}
+.step{display:flex;gap:12px;align-items:flex-start;padding:13px;border-radius:18px;background:#f9fafb;border:1px solid #edf0f4}
+.step b{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.step strong{display:block}.step span{display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.35}
+.quick{display:grid;gap:10px}
+.quick a{border-radius:18px;background:#111827;color:#fff;text-decoration:none;padding:14px 16px;font-weight:1000}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static}}
+@media(max-width:680px){.hero{grid-template-columns:1fr;text-align:center}.logoBox{max-width:170px;margin:auto}.hero h1{font-size:32px}.grid,.actions{grid-template-columns:1fr}.panel{padding:20px;border-radius:26px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div class="logoBox"><img src="/metadata/991_visa_logo_only.png" alt="ExpressVisa One"></div>
+    <div>
+      <h1>ExpressVisa Appointment Center</h1>
+      <p>Premium booking intake for visa, jobs, marketplace and lifestyle services.</p>
+      <div class="heroBadges">
+        <span class="badge">Verified Agent Review</span>
+        <span class="badge">Secure Document Intake</span>
+        <span class="badge">Status Tracking</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell">
+    <div class="panel">
+      <div class="notice"><span>✅</span><div>Submit your appointment request. Passport number is required for reference; passport expiry date is not required at booking stage.</div></div>
+
+      <form method="post" enctype="multipart/form-data">
+        <div class="grid">
+          <div>
+            <label>Full Name *</label>
+            <input class="field" name="full_name" placeholder="Full Name" required>
+          </div>
+          <div>
+            <label>Nationality *</label>
+            <input class="field" name="nationality" placeholder="Nationality" required>
+          </div>
+
+          <div>
+            <label>Passport No. *</label>
+            <input class="field" name="passport_no" placeholder="Passport No." required>
+          </div>
+          <div>
+            <label>WhatsApp *</label>
+            <input class="field" name="whatsapp" placeholder="+60..." required>
+          </div>
+
+          <div>
+            <label>Service Type *</label>
+            <select class="field" name="service_type" required>
+              <option>Visa & Permit</option>
+              <option>Jobs Posting</option>
+              <option>FoodTruck Marketplace Service</option>
+              <option>Business / Agent Support</option>
+              <option>Luxury MPV Rental</option>
+              <option>Premium Homestay</option>
+              <option>Online Loan Apply</option>
+            </select>
+          </div>
+          <div>
+            <label>Preferred Date *</label>
+            <input class="field" name="preferred_date" type="date" required>
+          </div>
+
+          <div>
+            <label>Preferred Time *</label>
+            <input class="field" name="preferred_time" placeholder="Example: 10:30 AM" required>
+          </div>
+          <div>
+            <label>Email <span class="optional">Optional</span></label>
+            <input class="field" name="email" type="email" placeholder="Email">
+          </div>
+
+          <div class="fileBox full">
+            <label>Upload Passport / Supporting Documents <span class="optional">Optional at booking stage</span></label>
+            <input name="documents[]" type="file" multiple>
+          </div>
+
+          <div class="full">
+            <label>Notes <span class="optional">Optional</span></label>
+            <textarea class="field" name="notes" placeholder="Tell us your case details, preferred location, urgency, or special instructions."></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="submit" type="submit">Submit Booking</button>
+          <a class="back" href="/status/">Check Status</a>
+        </div>
+      </form>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <h2 style="margin:0 0 14px">Booking Flow</h2>
+        <div class="step"><b>1</b><div><strong>Submit</strong><span>Send name, nationality, passport number and contact details.</span></div></div>
+        <div class="step"><b>2</b><div><strong>Review</strong><span>Verified agent checks your request and documents.</span></div></div>
+        <div class="step"><b>3</b><div><strong>Confirm</strong><span>Appointment date, time and next action are confirmed.</span></div></div>
+        <div class="step"><b>4</b><div><strong>Track</strong><span>Use status page to monitor progress.</span></div></div>
+      </div>
+
+      <div class="panel quick">
+        <a href="/status/">🔎 Check Booking Status</a>
+        <a href="/wallet/">💳 Open Wallet</a>
+        <a href="/post/">📣 Free Ads / Post Jobs</a>
+      </div>
+    </aside>
+  </section>
+</main>
+
+
+
+
+
+
+
+<script src="/assets/-bottom-bar.js?v=991-solid-red-v3"></script>
+</body>
+</html>

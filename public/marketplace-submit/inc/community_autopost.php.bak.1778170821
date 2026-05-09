@@ -1,0 +1,119 @@
+<?php
+declare(strict_types=1);
+
+/* =========================
+   CONFIG
+========================= */
+const FLARUM_API = 'https://expressvisa.one/china/community/api';
+const FLARUM_TOKEN = 'YOUR_ADMIN_API_KEY'; // replace
+
+/* =========================
+   HELPERS
+========================= */
+function ev_clean_phone(string $p): string {
+    $p = preg_replace('/\D+/', '', $p);
+    if (strpos($p, '60') !== 0) {
+        $p = '60' . ltrim($p, '0');
+    }
+    return $p;
+}
+
+function ev_whatsapp_link(string $phone, string $title): string {
+    $p = ev_clean_phone($phone);
+    $msg = rawurlencode("Hi I am interested in your {$title} listing on ExpressVisa");
+    return "https://wa.me/{$p}?text={$msg}";
+}
+
+function ev_build_title(array $row): string {
+    return sprintf(
+        "%s · %s · %s — %s",
+        $row['service_name'],
+        $row['nationality_name'],
+        $row['location_name'],
+        $row['title']
+    );
+}
+
+function ev_build_content(array $row): string {
+    $wa = ev_whatsapp_link($row['contact'], $row['title']);
+
+    return "
+━━━━━━━━━━━━━━━━━━
+📌 SERVICE OVERVIEW
+━━━━━━━━━━━━━━━━━━
+{$row['description']}
+
+━━━━━━━━━━━━━━━━━━
+📍 LOCATION
+━━━━━━━━━━━━━━━━━━
+Location: {$row['location_name']}
+Area: {$row['area_name']}
+
+━━━━━━━━━━━━━━━━━━
+🌏 TARGET GROUP
+━━━━━━━━━━━━━━━━━━
+Nationality: {$row['nationality_name']}
+
+━━━━━━━━━━━━━━━━━━
+📦 DETAILS
+━━━━━━━━━━━━━━━━━━
+• Category: {$row['service_name']}
+• Status: Active
+
+━━━━━━━━━━━━━━━━━━
+💬 CONTACT
+━━━━━━━━━━━━━━━━━━
+WhatsApp:
+{$wa}
+
+━━━━━━━━━━━━━━━━━━
+🖼️ PREVIEW
+━━━━━━━━━━━━━━━━━━
+<img src=\"{$row['image']}\" width=\"100%\" />
+
+━━━━━━━━━━━━━━━━━━
+⚡ QUICK ACTION
+━━━━━━━━━━━━━━━━━━
+👉 Click to WhatsApp now
+👉 Fast response guaranteed
+
+━━━━━━━━━━━━━━━━━━
+";
+}
+
+/* =========================
+   PUSH TO FLARUM
+========================= */
+function ev_post_to_flarum(array $row): array {
+
+    $title = ev_build_title($row);
+    $content = ev_build_content($row);
+
+    $payload = [
+        'data' => [
+            'type' => 'discussions',
+            'attributes' => [
+                'title' => $title,
+                'content' => $content
+            ]
+        ]
+    ];
+
+    $ch = curl_init(FLARUM_API . '/discussions');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Token ' . FLARUM_TOKEN,
+            'Content-Type: application/json'
+        ],
+        CURLOPT_POSTFIELDS => json_encode($payload)
+    ]);
+
+    $res = curl_exec($ch);
+    $err = curl_error($ch);
+    curl_close($ch);
+
+    return ['response'=>$res, 'error'=>$err];
+}
+

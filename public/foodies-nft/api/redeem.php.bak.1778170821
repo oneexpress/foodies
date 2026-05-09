@@ -1,0 +1,99 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/../_db.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    fnft_json(['ok'=>false,'error'=>'POST_REQUIRED'],405);
+}
+
+$raw = file_get_contents('php://input');
+$body = json_decode(is_string($raw) ? $raw : '', true);
+if (!is_array($body)) $body = [];
+
+$tierNo = (int)($body['tier_no'] ?? 0);
+$tiers = fnft_tiers();
+if (!isset($tiers[$tierNo])) {
+    fnft_json(['ok'=>false,'error'=>'INVALID_TIER'],400);
+}
+
+$tier = $tiers[$tierNo];
+$pdo = fnft_pdo();
+$wallet = fnft_wallet();
+
+$pdo->prepare("INSERT IGNORE INTO ev_reward_profiles(wallet) VALUES(?)")->execute([$wallet]);
+$st = $pdo->prepare("SELECT * FROM ev_reward_profiles WHERE wallet=? LIMIT 1 FOR UPDATE");
+
+$pdo->beginTransaction();
+
+$st->execute([$wallet]);
+$profile = $st->fetch();
+if (!$profile) {
+    $pdo->rollBack();
+    fnft_json(['ok'=>false,'error'=>'PROFILE_NOT_FOUND'],404);
+}
+
+$vshare = (float)($profile['total_vshare'] ?? 0);
+$score = (float)($profile['total_score'] ?? 0);
+
+if ($vshare < (float)$tier['vshare']) {
+    $pdo->rollBack();
+    fnft_json(['ok'=>false,'error'=>'INSUFFICIENT_VSHARE'],400);
+}
+if ($score < (float)$tier['score']) {
+    $pdo->rollBack();
+    fnft_json(['ok'=>false,'error'=>'INSUFFICIENT_SCORE'],400);
+}
+
+$uid = 'FNFT-' . strtoupper($tier['tier_key']) . '-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(3)));
+$nftUid = 'FOODIES-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
+$eventRef = 'BURN-' . $uid;
+
+$pdo->prepare("
+    UPDATE ev_reward_profiles
+    SET total_vshare = total_vshare - ?
+    WHERE wallet=?
+")->execute([$tier['vshare'], $wallet]);
+
+$pdo->prepare("
+    INSERT INTO ev_reward_ledger(wallet,event_ref,event_type,score_delta,vshare_delta,vusdt_delta,memo)
+    VALUES(?,?,?,?,?,?,?)
+")->execute([
+    $wallet,
+    $eventRef,
+    'foodies_nft_redeem',
+    '0.000000',
+    '-' . $tier['vshare'],
+    '0.000000',
+    'Foodies NFT redeem burn: ' . $tier['name_en']
+]);
+
+$pdo->prepare("
+    INSERT INTO ev_foodies_nft_redeems
+    (redeem_uid,wallet,tier_no,tier_key,tier_name_en,tier_name_zh,stars,weight,required_vshare,required_score,status,nft_uid,meta_json)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+")->execute([
+    $uid,
+    $wallet,
+    $tier['tier_no'],
+    $tier['tier_key'],
+    $tier['name_en'],
+    $tier['name_zh'],
+    $tier['stars'],
+    $tier['weight'],
+    $tier['vshare'],
+    $tier['score'],
+    'pending',
+    $nftUid,
+    json_encode(['icon'=>$tier['icon'],'burn_event_ref'=>$eventRef], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+]);
+
+$pdo->commit();
+
+fnft_json([
+    'ok'=>true,
+    'message'=>'REDEEM_CREATED',
+    'redeem_uid'=>$uid,
+    'nft_uid'=>$nftUid,
+    'tier'=>$tier,
+]);
+

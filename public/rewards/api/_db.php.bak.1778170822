@@ -1,0 +1,100 @@
+<?php
+declare(strict_types=1);
+
+function ev_env_load(): void {
+    static $loaded = false;
+    if ($loaded) return;
+    $loaded = true;
+    $file = '/var/www/secure/.env';
+    if (!is_file($file)) return;
+    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+        [$k,$v] = explode('=', $line, 2);
+        $_ENV[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+    }
+}
+
+function ev_env(string $k, string $d=''): string {
+    ev_env_load();
+    $v = $_ENV[$k] ?? getenv($k);
+    return trim((string)($v !== false && $v !== null && $v !== '' ? $v : $d));
+}
+
+function ev_pdo(): PDO {
+    $host = ev_env('DB_HOST', '127.0.0.1');
+    $db   = ev_env('VISA_DB_NAME', ev_env('DB_DATABASE', 'visa_db'));
+    $user = ev_env('DB_USERNAME', ev_env('DB_USER', 'oneexpressvisa'));
+    $pass = ev_env('DB_PASSWORD', ev_env('DB_PASS', '$Express4653'));
+    return new PDO("mysql:host={$host};dbname={$db};charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+}
+
+function ev_rewards_wallet(): string {
+    return trim((string)(
+        $_SESSION['ev_ton_address']
+        ?? $_SESSION['ton_wallet']
+        ?? $_SESSION['wallet_address']
+        ?? $_COOKIE['ev_ton_wallet']
+        ?? $_COOKIE['ev_wallet_user']
+        ?? ''
+    ));
+}
+
+function ev_rewards_account_id(): int {
+    return (int)($_SESSION['ev_account_id'] ?? $_SESSION['wallet_user_id'] ?? 0);
+}
+
+function ev_rewards_guard(): void {
+    if (ev_rewards_account_id() <= 0 && ev_rewards_wallet() === '') {
+        ev_json(['ok'=>false,'error'=>'TON_LOGIN_REQUIRED','redirect'=>'/signup/?next=/rewards/&reason=ton_required'], 401);
+    }
+}
+
+function ev_json(array $data, int $code=200): never {
+    http_response_code($code);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function ev_rewards_install(PDO $pdo): void {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ev_rewards_claims (
+      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      account_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      wallet_address VARCHAR(128) NOT NULL DEFAULT '',
+      token VARCHAR(16) NOT NULL DEFAULT 'vSHARE',
+      amount DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+      proof_nonce VARCHAR(128) NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_account_day(account_id, created_at),
+      KEY idx_wallet_day(wallet_address, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ev_wallet_ledger (
+      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      wallet_address VARCHAR(128) NOT NULL DEFAULT '',
+      token VARCHAR(16) NOT NULL,
+      type VARCHAR(32) NOT NULL,
+      amount DECIMAL(24,6) NOT NULL DEFAULT 0.000000,
+      meta_json LONGTEXT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_user_token(user_id, token),
+      KEY idx_wallet_token(wallet_address, token)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function ev_balance(PDO $pdo, int $uid, string $wallet, string $token): float {
+    try {
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(CASE WHEN type IN ('debit','spend','burn','donation') THEN -amount ELSE amount END),0) FROM ev_wallet_ledger WHERE token=? AND (user_id=? OR wallet_address=?)");
+        $stmt->execute([$token, $uid, $wallet]);
+        return (float)$stmt->fetchColumn();
+    } catch (Throwable $e) {
+        return 0.0;
+    }
+}
+

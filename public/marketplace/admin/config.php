@@ -1,0 +1,36 @@
+<?php
+// HTTP
+define('HTTP_SERVER', 'https://expressvisa.one/marketplace/admin/');
+define('HTTP_CATALOG', 'https://expressvisa.one/marketplace/');
+
+// HTTPS
+define('HTTPS_SERVER', 'https://expressvisa.one/marketplace/admin/');
+define('HTTPS_CATALOG', 'https://expressvisa.one/marketplace/');
+
+// DIR
+define('DIR_APPLICATION', '/var/www/html/visa/public/marketplace/admin/');
+define('DIR_SYSTEM', '/var/www/html/visa/public/marketplace/system/');
+define('DIR_IMAGE', '/var/www/html/visa/public/marketplace/image/');
+define('DIR_STORAGE', '/var/www/html/visa/storage/');
+define('DIR_CATALOG', '/var/www/html/visa/public/marketplace/catalog/');
+define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
+define('DIR_TEMPLATE', DIR_APPLICATION . 'view/template/');
+define('DIR_CONFIG', DIR_SYSTEM . 'config/');
+define('DIR_CACHE', DIR_STORAGE . 'cache/');
+define('DIR_DOWNLOAD', DIR_STORAGE . 'download/');
+define('DIR_LOGS', DIR_STORAGE . 'logs/');
+define('DIR_MODIFICATION', DIR_STORAGE . 'modification/');
+define('DIR_SESSION', DIR_STORAGE . 'session/');
+define('DIR_UPLOAD', DIR_STORAGE . 'upload/');
+
+// DB
+define('DB_DRIVER', 'mysqli');
+define('DB_HOSTNAME', 'localhost');
+define('DB_USERNAME', 'oneexpressvisa');
+define('DB_PASSWORD', '$Express4653');
+define('DB_DATABASE', 'visa_marketplace_db');
+define('DB_PORT', '3306');
+define('DB_PREFIX', 'oc_');
+
+// OpenCart API
+define('OPENCART_SERVER', 'https://www.opencart.com/');

@@ -1,0 +1,136 @@
+<?php
+declare(strict_types=1);
+
+header('Content-Type: application/json; charset=utf-8');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+function out(array $a): void {
+    echo json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+try {
+
+    $env = [];
+
+    if (is_file('/var/www/secure/.env')) {
+        foreach (file('/var/www/secure/.env') as $line) {
+
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            if (!str_contains($line, '=')) {
+                continue;
+            }
+
+            [$k,$v] = explode('=', $line, 2);
+
+            $env[trim($k)] = trim($v);
+        }
+    }
+
+    $dbHost = trim(str_replace(127.0.0.1,"127.0.0.1", ($env["DB_HOST"] ?? "127.0.0.1")), "'\" ");
+    $dbName = $env['DB_DATABASE'] ?? 'visa_db';
+    $dbUser = $env['DB_USERNAME'] ?? 'oneexpressvisa';
+    $dbPass = $env['DB_PASSWORD'] ?? '';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Canonical Wallet Source
+    |--------------------------------------------------------------------------
+    | SESSION first
+    | COOKIE fallback
+    |--------------------------------------------------------------------------
+    */
+
+    $wallet = trim(
+        (string)(
+            $_SESSION['wallet_address']
+            ?? $_SESSION['wallet']
+            ?? $_SESSION['ton_wallet']
+            ?? $_COOKIE['ev_ton_wallet']
+            ?? ''
+        )
+    );
+
+    $pdo = new PDO(
+        "mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4",
+        $dbUser,
+        $dbPass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
+
+    $vshare = 0;
+    $vusdt  = 0;
+    $score  = 0;
+
+    if ($wallet !== '') {
+
+        $st = $pdo->prepare("
+            SELECT token, COALESCE(SUM(amount),0) bal
+            FROM ev_wallet_ledger
+            WHERE wallet_address=?
+            GROUP BY token
+        ");
+
+        $st->execute([$wallet]);
+
+        foreach ($st->fetchAll() as $r) {
+
+            $token = strtoupper((string)$r['token']);
+
+            if ($token === 'VSHARE') {
+                $vshare = (float)$r['bal'];
+            }
+
+            if ($token === 'VUSDT') {
+                $vusdt = (float)$r['bal'];
+            }
+        }
+
+        $st = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM ev_rewards_claims
+            WHERE wallet_address=?
+        ");
+
+        $st->execute([$wallet]);
+
+        $score = (int)$st->fetchColumn();
+    }
+
+    out([
+        'ok' => true,
+        'wallet_connected' => ($wallet !== ''),
+        'wallet' => $wallet,
+        'wallet_short' => (
+            strlen($wallet) > 12
+                ? substr($wallet,0,6) . '...' . substr($wallet,-6)
+                : $wallet
+        ),
+        'balance_vshare' => number_format($vshare,6,'.',''),
+        'balance_vusdt'  => number_format($vusdt,2,'.',''),
+        'score' => $score,
+        'server_time' => gmdate('c'),
+    ]);
+
+} catch (Throwable $e) {
+
+    http_response_code(200);
+
+    out([
+        'ok' => false,
+        'error' => $e->getMessage(),
+        'line' => $e->getLine(),
+        'file' => basename($e->getFile())
+    ]);
+}

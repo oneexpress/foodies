@@ -1,0 +1,6 @@
+<?php
+$_SERVER['SCRIPT_FILENAME'] = '/var/www/html/visa/china-community/public/index.php';
+$_SERVER['DOCUMENT_ROOT'] = '/var/www/html/visa/china-community/public';
+chdir('/var/www/html/visa/china-community/public');
+require '/var/www/html/visa/china-community/public/index.php';
+
